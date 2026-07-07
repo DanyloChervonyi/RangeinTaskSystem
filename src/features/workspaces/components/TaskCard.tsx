@@ -4,8 +4,6 @@ interface TaskCardProps {
   task: Task;
 }
 
-export function TaskCard({ task: _task }: TaskCardProps) {
-  void _task;
-
-  return null;
+export function TaskCard({ task }: TaskCardProps) {
+  return <li className="task-card">{task.title}</li>;
 }
