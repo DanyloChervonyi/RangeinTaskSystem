@@ -1,12 +1,25 @@
 import { useState } from "react";
 import { WorkspaceView } from "../features/workspaces";
-import { workspacesMock } from "../mocks/workspaces";
+import { useTextFieldSubmit } from "../hooks/useTextFieldSubmit";
+import { useWorkspaces } from "../hooks/useWorkspaces";
 
 export function App() {
-  const workspaces = workspacesMock.workspaces;
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(workspaces[0]?.id);
+  const { addBoard, addTask, addWorkspace, workspaces } = useWorkspaces();
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
+    workspaces[0]?.id,
+  );
   const selectedWorkspace =
-    workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? workspaces[0];
+    workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ??
+    workspaces[0];
+
+  const handleAddWorkspace = useTextFieldSubmit({
+    fieldName: "workspaceName",
+    onSubmit: (name) => {
+      setSelectedWorkspaceId(addWorkspace({ name }));
+    },
+  });
+
+  if (!selectedWorkspace) return null;
 
   return (
     <main className="app-shell">
@@ -18,7 +31,9 @@ export function App() {
           {workspaces.map((workspace) => (
             <li className="workspace-list-item" key={workspace.id}>
               <button
-                aria-current={workspace.id === selectedWorkspace.id ? "page" : undefined}
+                aria-current={
+                  workspace.id === selectedWorkspace.id ? "page" : undefined
+                }
                 className="workspace-button"
                 onClick={() => setSelectedWorkspaceId(workspace.id)}
                 type="button"
@@ -29,9 +44,26 @@ export function App() {
             </li>
           ))}
         </ul>
+
+        <form className="entity-form" onSubmit={handleAddWorkspace}>
+          <label htmlFor="workspace-name">New workspace</label>
+          <div>
+            <input
+              id="workspace-name"
+              name="workspaceName"
+              placeholder="e.g. Marketing"
+              type="text"
+            />
+            <button type="submit">Add</button>
+          </div>
+        </form>
       </aside>
 
-      <WorkspaceView workspace={selectedWorkspace} />
+      <WorkspaceView
+        addBoard={addBoard}
+        addTask={addTask}
+        workspace={selectedWorkspace}
+      />
     </main>
   );
 }

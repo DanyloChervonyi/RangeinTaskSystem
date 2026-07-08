@@ -49,6 +49,10 @@ button {
   cursor: pointer;
 }
 
+input {
+  min-width: 0;
+}
+
 h1,
 h2,
 h3 {
@@ -95,6 +99,70 @@ h3 {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+}
+
+.entity-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+
+  label {
+    color: $color-text-muted;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  div {
+    display: flex;
+    gap: 8px;
+  }
+
+  input {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background: $color-surface;
+    color: $color-text;
+
+    &:focus {
+      border-color: $color-primary;
+      outline: 3px solid rgba(61, 114, 246, 0.16);
+    }
+  }
+
+  button {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: $radius-md;
+    background: $color-primary;
+    color: $color-surface;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &:hover {
+      background: #2f62df;
+    }
+  }
+
+  &-inline {
+    max-width: 520px;
+    margin-top: 20px;
+  }
+
+  &-compact {
+    margin-top: 16px;
+
+    div {
+      display: grid;
+    }
+
+    button {
+      width: 100%;
+    }
   }
 }
 
