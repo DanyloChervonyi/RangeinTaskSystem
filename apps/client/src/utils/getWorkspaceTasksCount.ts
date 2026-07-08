@@ -6,6 +6,3 @@ export function getWorkspaceTasksCount(workspace: Workspace): number {
     0,
   );
 }
-export function createId(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`;
-}
