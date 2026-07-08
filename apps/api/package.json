@@ -1,0 +1,11 @@
+{
+  "name": "@rangein-task-system/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"Install NestJS dependencies before running the API\"",
+    "build": "echo \"Install NestJS dependencies before building the API\"",
+    "lint": "echo \"Install NestJS dependencies before linting the API\""
+  }
+}
