@@ -7,10 +7,33 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+**/node_modules
+
+# Build outputs
 dist
 dist-ssr
+**/dist
+**/dist-ssr
+build
+coverage
+
+# Environment files
 *.local
+.env
+.env.*
+!.env.example
+
+# Prisma
+**/prisma/generated
+**/generated/prisma
+
+# Tool caches
+.turbo
+.nx
+.vite
+.cache
 
 # Editor directories and files
 .vscode/*

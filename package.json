@@ -4,33 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "dev": "pnpm --dir apps/client dev",
+    "build": "pnpm --dir apps/client build",
+    "lint": "pnpm --dir apps/client lint",
+    "preview": "pnpm --dir apps/client preview",
+    "client:dev": "pnpm --dir apps/client dev",
+    "client:build": "pnpm --dir apps/client build",
+    "client:lint": "pnpm --dir apps/client lint",
+    "client:preview": "pnpm --dir apps/client preview"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@rolldown/binding-win32-x64-msvc": "1.1.4",
-    "@types/node": "^24.13.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "eslint": "^10.6.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "lightningcss-win32-x64-msvc": "1.32.0",
-    "prettier": "^3.9.4",
-    "sass": "^1.101.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.62.0",
-    "vite": "^8.1.1"
+    "lightningcss-win32-x64-msvc": "1.32.0"
   },
   "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8"
 }
