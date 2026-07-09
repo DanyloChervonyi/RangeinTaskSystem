@@ -1,20 +1,28 @@
-import { useTextFieldSubmit } from "../../../hooks/useTextFieldSubmit";
-import type { Workspace } from "../../../types/workspace";
+import type { Board, Workspace } from "../../../types/workspace";
 import { getWorkspaceTasksCount } from "../../../utils/getWorkspaceTasksCount";
 import { BoardColumn } from "./BoardColumn";
 
 interface WorkspaceViewProps {
-  addBoard: (workspaceId: string, input: { name: string }) => string;
-  addTask: (workspaceId: string, boardId: string, input: { title: string }) => string;
+  onCreateBoard: (workspace: Workspace) => void;
+  onCreateTask: (workspace: Workspace, board: Board) => void;
+  onDeleteBoard: (workspace: Workspace, board: Board) => void;
+  onDeleteWorkspace: (workspace: Workspace) => void;
+  onEditBoard: (workspace: Workspace, board: Board) => void;
+  onEditWorkspace: (workspace: Workspace) => void;
+  onMoveBoard: (workspace: Workspace, board: Board, direction: -1 | 1) => void;
   workspace: Workspace;
 }
 
-export function WorkspaceView({ addBoard, addTask, workspace }: WorkspaceViewProps) {
-  const handleAddBoard = useTextFieldSubmit({
-    fieldName: "boardName",
-    onSubmit: (name) => addBoard(workspace.id, { name }),
-  });
-
+export function WorkspaceView({
+  onCreateBoard,
+  onCreateTask,
+  onDeleteBoard,
+  onDeleteWorkspace,
+  onEditBoard,
+  onEditWorkspace,
+  onMoveBoard,
+  workspace,
+}: WorkspaceViewProps) {
   return (
     <section className="workspace-view" aria-labelledby="workspace-title">
       <header className="workspace-header">
@@ -23,21 +31,45 @@ export function WorkspaceView({ addBoard, addTask, workspace }: WorkspaceViewPro
           <h2 id="workspace-title">{workspace.name}</h2>
         </div>
         <p className="workspace-summary">
-          {workspace.boards.length} boards · {getWorkspaceTasksCount(workspace)}{" "}
-          tasks
+          {workspace.boards.length} boards - {getWorkspaceTasksCount(workspace)} tasks
         </p>
-      </header>
-      <form className="entity-form entity-form-inline" onSubmit={handleAddBoard}>
-        <label htmlFor="board-name">New column</label>
-        <div>
-          <input id="board-name" name="boardName" placeholder="e.g. QA" type="text" />
-          <button type="submit">Add column</button>
+        <div className="item-actions">
+          <button
+            className="button-secondary"
+            onClick={() => onEditWorkspace(workspace)}
+            type="button"
+          >
+            Edit
+          </button>
+          <button
+            className="button-danger"
+            onClick={() => onDeleteWorkspace(workspace)}
+            type="button"
+          >
+            Delete
+          </button>
         </div>
-      </form>
+      </header>
+
+      <div className="workspace-toolbar">
+        <button className="button-primary" onClick={() => onCreateBoard(workspace)} type="button">
+          Add column
+        </button>
+      </div>
 
       <div className="board-grid">
-        {workspace.boards.map((board) => (
-          <BoardColumn addTask={addTask} board={board} key={board.id} workspaceId={workspace.id} />
+        {workspace.boards.map((board, index) => (
+          <BoardColumn
+            board={board}
+            canMoveLeft={index > 0}
+            canMoveRight={index < workspace.boards.length - 1}
+            key={board.id}
+            onCreateTask={() => onCreateTask(workspace, board)}
+            onDelete={() => onDeleteBoard(workspace, board)}
+            onEdit={() => onEditBoard(workspace, board)}
+            onMoveLeft={() => onMoveBoard(workspace, board, -1)}
+            onMoveRight={() => onMoveBoard(workspace, board, 1)}
+          />
         ))}
       </div>
     </section>
