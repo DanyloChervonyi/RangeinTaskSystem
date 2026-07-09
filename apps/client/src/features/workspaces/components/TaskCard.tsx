@@ -1,9 +1,8 @@
-import type { Task } from "../../../types/workspace";
+import { memo } from "react";
+import type { TaskCardProps } from "../../../types/props";
 
-interface TaskCardProps {
-  task: Task;
-}
-
-export function TaskCard({ task }: TaskCardProps) {
+function TaskCardComponent({ task }: TaskCardProps) {
   return <li className="task-card">{task.title}</li>;
 }
+
+export const TaskCard = memo(TaskCardComponent);
