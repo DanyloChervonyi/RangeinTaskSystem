@@ -8,6 +8,7 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
     "sourceMap": true,
+    "strict": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
