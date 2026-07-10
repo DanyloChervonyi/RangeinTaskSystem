@@ -1,55 +1,53 @@
-import { useState } from "react";
+import { create } from "zustand";
 import { workspacesMock } from "../mocks/workspaces";
 import type {
   Board,
   Task,
   Workspace,
-  WorkspaceInput,
-  BoardInput,
-  TaskInput,
+  WorkspaceStore,
 } from "../types/workspace";
 import { createId } from "../utils/createId";
 
-export function useWorkspaces() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(() =>
-    structuredClone(workspacesMock.workspaces),
-  );
+const initialWorkspaces = structuredClone(workspacesMock.workspaces);
 
-  function addWorkspace({ name }: WorkspaceInput) {
+export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
+  selectedWorkspaceId: initialWorkspaces[0]?.id,
+  workspaces: initialWorkspaces,
+
+  addWorkspace: ({ name }) => {
     const workspace: Workspace = {
+      boards: [],
       id: createId("workspace"),
       name,
-      boards: [],
     };
-    setWorkspaces((currentWorkspaces) => [...currentWorkspaces, workspace]);
+    set(({ workspaces }) => ({
+      selectedWorkspaceId: workspace.id,
+      workspaces: [...workspaces, workspace],
+    }));
     return workspace.id;
-  }
-  function addBoard(workspaceId: Workspace["id"], { name }: BoardInput) {
+  },
+  addBoard: (workspaceId, { name }) => {
     const board: Board = {
       id: createId("board"),
       name,
       tasks: [],
     };
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) =>
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) =>
         workspace.id === workspaceId
           ? { ...workspace, boards: [...workspace.boards, board] }
           : workspace,
       ),
-    );
+    }));
     return board.id;
-  }
-  function addTask(
-    workspaceId: Workspace["id"],
-    boardId: Board["id"],
-    { title }: TaskInput,
-  ) {
+  },
+  addTask: (workspaceId, boardId, { title }) => {
     const task: Task = {
       id: createId("task"),
       title,
     };
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) =>
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) =>
         workspace.id === workspaceId
           ? {
               ...workspace,
@@ -61,27 +59,20 @@ export function useWorkspaces() {
             }
           : workspace,
       ),
-    );
+    }));
     return task.id;
-  }
+  },
 
-  function updateWorkspace(
-    workspaceId: Workspace["id"],
-    { name }: WorkspaceInput,
-  ) {
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) =>
+  updateWorkspace: (workspaceId, { name }) => {
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) =>
         workspace.id === workspaceId ? { ...workspace, name } : workspace,
       ),
-    );
-  }
-  function updateBoard(
-    workspaceId: Workspace["id"],
-    boardId: Board["id"],
-    { name }: BoardInput,
-  ) {
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) =>
+    }));
+  },
+  updateBoard: (workspaceId, boardId, { name }) => {
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) =>
         workspace.id === workspaceId
           ? {
               ...workspace,
@@ -91,17 +82,25 @@ export function useWorkspaces() {
             }
           : workspace,
       ),
-    );
-  }
+    }));
+  },
 
-  function deleteWorkspace(workspaceId: Workspace["id"]) {
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.filter((workspace) => workspace.id !== workspaceId),
-    );
-  }
-  function deleteBoard(workspaceId: Workspace["id"], boardId: Board["id"]) {
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) =>
+  deleteWorkspace: (workspaceId) => {
+    const { selectedWorkspaceId, workspaces } = get();
+    const nextWorkspace = workspaces.find(({ id }) => id !== workspaceId);
+    set({
+      selectedWorkspaceId:
+        selectedWorkspaceId === workspaceId
+          ? nextWorkspace?.id
+          : selectedWorkspaceId,
+      workspaces: workspaces.filter(
+        (workspace) => workspace.id !== workspaceId,
+      ),
+    });
+  },
+  deleteBoard: (workspaceId, boardId) => {
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) =>
         workspace.id === workspaceId
           ? {
               ...workspace,
@@ -109,18 +108,13 @@ export function useWorkspaces() {
             }
           : workspace,
       ),
-    );
-  }
+    }));
+  },
 
-  function reorderBoard(
-    workspaceId: Workspace["id"],
-    boardId: Board["id"],
-    direction: -1 | 1,
-  ) {
-    setWorkspaces((currentWorkspaces) =>
-      currentWorkspaces.map((workspace) => {
+  reorderBoard: (workspaceId, boardId, direction) => {
+    set(({ workspaces }) => ({
+      workspaces: workspaces.map((workspace) => {
         if (workspace.id !== workspaceId) return workspace;
-
         const currentIndex = workspace.boards.findIndex(
           (board) => board.id === boardId,
         );
@@ -136,21 +130,11 @@ export function useWorkspaces() {
         const [board] = reorderedBoards.splice(currentIndex, 1);
         if (!board) return workspace;
         reorderedBoards.splice(nextIndex, 0, board);
-
         return { ...workspace, boards: reorderedBoards };
       }),
-    );
-  }
-
-  return {
-    addBoard,
-    addTask,
-    addWorkspace,
-    deleteBoard,
-    deleteWorkspace,
-    reorderBoard,
-    updateBoard,
-    updateWorkspace,
-    workspaces,
-  };
-}
+    }));
+  },
+  selectWorkspace: (workspaceId) => {
+    set({ selectedWorkspaceId: workspaceId });
+  },
+}));
