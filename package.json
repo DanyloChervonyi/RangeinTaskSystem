@@ -4,14 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --dir apps/client dev",
-    "build": "pnpm --dir apps/client build",
-    "lint": "pnpm --dir apps/client lint",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r --workspace-concurrency=1 lint",
     "preview": "pnpm --dir apps/client preview",
     "client:dev": "pnpm --dir apps/client dev",
     "client:build": "pnpm --dir apps/client build",
     "client:lint": "pnpm --dir apps/client lint",
-    "client:preview": "pnpm --dir apps/client preview"
+    "client:preview": "pnpm --dir apps/client preview",
+    "api:dev": "pnpm --dir apps/api dev",
+    "api:build": "pnpm --dir apps/api build",
+    "api:lint": "pnpm --dir apps/api lint",
+    "api:prisma:generate": "pnpm --dir apps/api prisma:generate",
+    "api:prisma:migrate": "pnpm --dir apps/api prisma:migrate",
+    "api:prisma:studio": "pnpm --dir apps/api prisma:studio"
   },
   "devDependencies": {
     "@rolldown/binding-win32-x64-msvc": "1.1.4",

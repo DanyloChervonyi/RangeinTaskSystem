@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { TextEntityModal } from "../components/TextEntityModal";
 import { WorkspaceView } from "../features/workspaces";
-import { useWorkspaces } from "../hooks/useWorkspaces";
+import { useWorkspaces } from "../store/useWorkspaceStore";
 import type { Board, Workspace } from "../types/workspace";
 import { validateWorkspaceName } from "../utils/validateWorkspaceName";
 
