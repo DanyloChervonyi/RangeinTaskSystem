@@ -1,4 +1,4 @@
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import "reflect-metadata";
@@ -6,6 +6,7 @@ import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger("Bootstrap");
   const configService = app.get(ConfigService);
   const corsOrigin =
     configService.get<string>("CORS_ORIGIN") ?? "http://localhost:5173";
@@ -23,6 +24,10 @@ async function bootstrap() {
     }),
   );
   await app.listen(port);
+
+  const url = await app.getUrl();
+  logger.log(`🚀 Server started: ${url}`);
+  logger.log(`📡 API: ${url}/api`);
 }
 
 void bootstrap();
