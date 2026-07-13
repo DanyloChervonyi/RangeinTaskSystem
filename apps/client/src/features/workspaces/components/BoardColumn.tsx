@@ -1,18 +1,8 @@
-import type { Board } from "../../../types/workspace";
+import { memo } from "react";
 import { TaskCard } from "./TaskCard";
+import type { BoardColumnProps } from "../../../types/props";
 
-interface BoardColumnProps {
-  board: Board;
-  canMoveLeft: boolean;
-  canMoveRight: boolean;
-  onCreateTask: () => void;
-  onDelete: () => void;
-  onEdit: () => void;
-  onMoveLeft: () => void;
-  onMoveRight: () => void;
-}
-
-export function BoardColumn({
+function BoardColumnComponent({
   board,
   canMoveLeft,
   canMoveRight,
@@ -33,10 +23,20 @@ export function BoardColumn({
         <button className="button-secondary" onClick={onEdit} type="button">
           Edit
         </button>
-        <button className="button-secondary" disabled={!canMoveLeft} onClick={onMoveLeft} type="button">
+        <button
+          className="button-secondary"
+          disabled={!canMoveLeft}
+          onClick={onMoveLeft}
+          type="button"
+        >
           Left
         </button>
-        <button className="button-secondary" disabled={!canMoveRight} onClick={onMoveRight} type="button">
+        <button
+          className="button-secondary"
+          disabled={!canMoveRight}
+          onClick={onMoveRight}
+          type="button"
+        >
           Right
         </button>
         <button className="button-danger" onClick={onDelete} type="button">
@@ -50,9 +50,15 @@ export function BoardColumn({
         ))}
       </ul>
 
-      <button className="button-primary button-full" onClick={onCreateTask} type="button">
+      <button
+        className="button-primary button-full"
+        onClick={onCreateTask}
+        type="button"
+      >
         Add task
       </button>
     </article>
   );
 }
+
+export const BoardColumn = memo(BoardColumnComponent);
