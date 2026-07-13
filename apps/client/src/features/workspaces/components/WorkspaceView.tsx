@@ -1,19 +1,9 @@
-import type { Board, Workspace } from "../../../types/workspace";
+import { memo } from "react";
 import { getWorkspaceTasksCount } from "../../../utils/getWorkspaceTasksCount";
 import { BoardColumn } from "./BoardColumn";
+import type { WorkspaceViewProps } from "../../../types/props";
 
-interface WorkspaceViewProps {
-  onCreateBoard: (workspace: Workspace) => void;
-  onCreateTask: (workspace: Workspace, board: Board) => void;
-  onDeleteBoard: (workspace: Workspace, board: Board) => void;
-  onDeleteWorkspace: (workspace: Workspace) => void;
-  onEditBoard: (workspace: Workspace, board: Board) => void;
-  onEditWorkspace: (workspace: Workspace) => void;
-  onMoveBoard: (workspace: Workspace, board: Board, direction: -1 | 1) => void;
-  workspace: Workspace;
-}
-
-export function WorkspaceView({
+function WorkspaceViewComponent({
   onCreateBoard,
   onCreateTask,
   onDeleteBoard,
@@ -31,7 +21,8 @@ export function WorkspaceView({
           <h2 id="workspace-title">{workspace.name}</h2>
         </div>
         <p className="workspace-summary">
-          {workspace.boards.length} boards - {getWorkspaceTasksCount(workspace)} tasks
+          {workspace.boards.length} boards - {getWorkspaceTasksCount(workspace)}{" "}
+          tasks
         </p>
         <div className="item-actions">
           <button
@@ -52,7 +43,11 @@ export function WorkspaceView({
       </header>
 
       <div className="workspace-toolbar">
-        <button className="button-primary" onClick={() => onCreateBoard(workspace)} type="button">
+        <button
+          className="button-primary"
+          onClick={() => onCreateBoard(workspace)}
+          type="button"
+        >
           Add column
         </button>
       </div>
@@ -75,3 +70,5 @@ export function WorkspaceView({
     </section>
   );
 }
+
+export const WorkspaceView = memo(WorkspaceViewComponent);

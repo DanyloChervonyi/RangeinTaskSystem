@@ -1,230 +1,98 @@
-import { useState } from "react";
-import { ConfirmDialog } from "../components/ConfirmDialog";
-import { TextEntityModal } from "../components/TextEntityModal";
+import { useCallback, useMemo } from "react";
+import { PopupRoot } from "../components/PopupRoot";
 import { WorkspaceView } from "../features/workspaces";
-import { useWorkspaces } from "../hooks/useWorkspaces";
+import { useWorkspaces } from "../store/useWorkspaceStore";
 import type { Board, Workspace } from "../types/workspace";
-import { validateWorkspaceName } from "../utils/validateWorkspaceName";
-
-type TextModalState =
-  | { type: "create-workspace" }
-  | { type: "edit-workspace"; workspace: Workspace }
-  | { type: "create-board"; workspace: Workspace }
-  | { type: "edit-board"; board: Board; workspace: Workspace }
-  | { type: "create-task"; board: Board; workspace: Workspace };
-
-interface ConfirmState {
-  confirmLabel: string;
-  message: string;
-  title: string;
-  onConfirm: () => void;
-}
+import { PopupType } from "../types/popup";
 
 export function App() {
-  const {
-    addBoard,
-    addTask,
-    addWorkspace,
-    deleteBoard,
-    deleteWorkspace,
-    reorderBoard,
-    updateBoard,
-    updateWorkspace,
-    workspaces,
-  } = useWorkspaces();
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
-    string | undefined
-  >(workspaces[0]?.id);
-  const [textModalState, setTextModalState] = useState<TextModalState | null>(
-    null,
+  const workspaces = useWorkspaceStore((state) => state.workspaces);
+  const selectedWorkspaceId = useWorkspaceStore(
+    (state) => state.selectedWorkspaceId,
   );
-  const selectedWorkspace =
-    workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ??
-    workspaces[0];
+  const deleteBoard = useWorkspaceStore((state) => state.deleteBoard);
+  const deleteWorkspace = useWorkspaceStore((state) => state.deleteWorkspace);
+  const reorderBoard = useWorkspaceStore((state) => state.reorderBoard);
+  const selectWorkspace = useWorkspaceStore((state) => state.selectWorkspace);
+  const openConfirm = usePopupStore((state) => state.openConfirm);
+  const openTextPopup = usePopupStore((state) => state.openTextPopup);
+  const closeConfirm = usePopupStore((state) => state.closeConfirm);
 
-  function closeConfirm() {
-    setConfirmState(null);
-  }
-  function requestCloseTextModal() {
-    setConfirmState({
-      confirmLabel: "Close",
-      message: "Close this form? Entered changes will be lost.",
-      onConfirm: () => {
-        setTextModalState(null);
-        setConfirmState(null);
-      },
-      title: "Close form?",
-    });
-  }
-  function requestActionConfirmation(confirmState: ConfirmState) {
-    setConfirmState(confirmState);
-  }
-  function handleDeleteWorkspace(workspace: Workspace) {
-    requestActionConfirmation({
-      confirmLabel: "Delete",
-      message: `Delete workspace "${workspace.name}" and all its columns?`,
-      onConfirm: () => {
-        const nextWorkspace = workspaces.find(({ id }) => id !== workspace.id);
-        deleteWorkspace(workspace.id);
-        if (selectedWorkspaceId === workspace.id)
-          setSelectedWorkspaceId(nextWorkspace?.id);
-        setConfirmState(null);
-      },
-      title: "Delete workspace?",
-    });
-  }
-  function handleDeleteBoard(workspace: Workspace, board: Board) {
-    requestActionConfirmation({
-      confirmLabel: "Delete",
-      message: `Delete column "${board.name}" and all its tasks?`,
-      onConfirm: () => {
-        deleteBoard(workspace.id, board.id);
-        setConfirmState(null);
-      },
-      title: "Delete column?",
-    });
-  }
-  function renderTextModal() {
-    if (!textModalState) return null;
+  const selectedWorkspace = useMemo(
+    () =>
+      workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ??
+      workspaces[0],
+    [selectedWorkspaceId, workspaces],
+  );
 
-    if (textModalState.type === "create-workspace") {
-      return (
-        <TextEntityModal
-          inputLabel="Workspace name"
-          onRequestClose={requestCloseTextModal}
-          onSubmit={(name) =>
-            requestActionConfirmation({
-              confirmLabel: "Create",
-              message: `Create workspace "${name}"?`,
-              onConfirm: () => {
-                setSelectedWorkspaceId(addWorkspace({ name }));
-                setTextModalState(null);
-                setConfirmState(null);
-              },
-              title: "Create workspace?",
-            })
-          }
-          placeholder="example"
-          submitLabel="Create workspace"
-          title="Create workspace"
-          validate={validateWorkspaceName}
-        />
+  const handleDeleteWorkspace = useCallback(
+    (workspace: Workspace) => {
+      openConfirm(
+        {
+          confirmLabel: "Delete",
+          message: `Delete workspace "${workspace.name}" and all its columns?`,
+          title: "Delete workspace?",
+        },
+        () => {
+          deleteWorkspace(workspace.id);
+          closeConfirm();
+        },
       );
-    }
+    },
+    [closeConfirm, deleteWorkspace, openConfirm],
+  );
 
-    if (textModalState.type === "edit-workspace") {
-      const { workspace } = textModalState;
-      return (
-        <TextEntityModal
-          initialValue={workspace.name}
-          inputLabel="Workspace name"
-          onRequestClose={requestCloseTextModal}
-          onSubmit={(name) =>
-            requestActionConfirmation({
-              confirmLabel: "Save",
-              message: `Rename workspace "${workspace.name}" to "${name}"?`,
-              onConfirm: () => {
-                updateWorkspace(workspace.id, { name });
-                setTextModalState(null);
-                setConfirmState(null);
-              },
-              title: "Edit workspace?",
-            })
-          }
-          submitLabel="Save workspace"
-          title="Edit workspace"
-          validate={validateWorkspaceName}
-        />
+  const handleDeleteBoard = useCallback(
+    (workspace: Workspace, board: Board) => {
+      openConfirm(
+        {
+          confirmLabel: "Delete",
+          message: `Delete column "${board.name}" and all its tasks?`,
+          title: "Delete column?",
+        },
+        () => {
+          deleteBoard(workspace.id, board.id);
+          closeConfirm();
+        },
       );
-    }
-    if (textModalState.type === "create-board") {
-      const { workspace } = textModalState;
+    },
+    [closeConfirm, deleteBoard, openConfirm],
+  );
 
-      return (
-        <TextEntityModal
-          inputLabel="Column name"
-          onRequestClose={requestCloseTextModal}
-          onSubmit={(name) =>
-            requestActionConfirmation({
-              confirmLabel: "Create",
-              message: `Create column "${name}" in "${workspace.name}"?`,
-              onConfirm: () => {
-                addBoard(workspace.id, { name });
-                setTextModalState(null);
-                setConfirmState(null);
-              },
-              title: "Create column?",
-            })
-          }
-          placeholder="QA"
-          submitLabel="Create column"
-          title="Create column"
-        />
-      );
-    }
+  const handleCreateBoard = useCallback(
+    (workspace: Workspace) => {
+      openTextPopup({ type: PopupType.CREATE_BOARD, workspace });
+    },
+    [openTextPopup],
+  );
 
-    if (textModalState.type === "edit-board") {
-      const { board, workspace } = textModalState;
+  const handleCreateTask = useCallback(
+    (workspace: Workspace, board: Board) => {
+      openTextPopup({ board, type: PopupType.CREATE_TASK, workspace });
+    },
+    [openTextPopup],
+  );
 
-      return (
-        <TextEntityModal
-          initialValue={board.name}
-          inputLabel="Column name"
-          onRequestClose={requestCloseTextModal}
-          onSubmit={(name) =>
-            requestActionConfirmation({
-              confirmLabel: "Save",
-              message: `Rename column "${board.name}" to "${name}"?`,
-              onConfirm: () => {
-                updateBoard(workspace.id, board.id, { name });
-                setTextModalState(null);
-                setConfirmState(null);
-              },
-              title: "Edit column?",
-            })
-          }
-          submitLabel="Save column"
-          title="Edit column"
-        />
-      );
-    }
+  const handleEditBoard = useCallback(
+    (workspace: Workspace, board: Board) => {
+      openTextPopup({ board, type: PopupType.EDIT_BOARD, workspace });
+    },
+    [openTextPopup],
+  );
 
-    const { board, workspace } = textModalState;
-    return (
-      <TextEntityModal
-        inputLabel="Task title"
-        onRequestClose={requestCloseTextModal}
-        onSubmit={(title) =>
-          requestActionConfirmation({
-            confirmLabel: "Create",
-            message: `Create task "${title}" in "${board.name}"?`,
-            onConfirm: () => {
-              addTask(workspace.id, board.id, { title });
-              setTextModalState(null);
-              setConfirmState(null);
-            },
-            title: "Create task?",
-          })
-        }
-        placeholder="Task title"
-        submitLabel="Create task"
-        title="Create task"
-      />
-    );
-  }
-  function renderConfirmDialog() {
-    if (!confirmState) return null;
-    return (
-      <ConfirmDialog
-        confirmLabel={confirmState.confirmLabel}
-        message={confirmState.message}
-        onCancel={closeConfirm}
-        onConfirm={confirmState.onConfirm}
-        title={confirmState.title}
-      />
-    );
-  }
+  const handleEditWorkspace = useCallback(
+    (workspace: Workspace) => {
+      openTextPopup({ type: PopupType.EDIT_WORKSPACE, workspace });
+    },
+    [openTextPopup],
+  );
+
+  const handleMoveBoard = useCallback(
+    (workspace: Workspace, board: Board, direction: -1 | 1) => {
+      reorderBoard(workspace.id, board.id, direction);
+    },
+    [reorderBoard],
+  );
 
   return (
     <main className="app-shell">
@@ -234,7 +102,7 @@ export function App() {
           <h1 id="workspaces-title">Workspaces</h1>
           <button
             className="button-primary"
-            onClick={() => setTextModalState({ type: "create-workspace" })}
+            onClick={() => openTextPopup({ type: PopupType.CREATE_WORKSPACE })}
             type="button"
           >
             Add
@@ -249,7 +117,7 @@ export function App() {
                   selectedWorkspace?.id === workspace.id ? "page" : undefined
                 }
                 className="workspace-button"
-                onClick={() => setSelectedWorkspaceId(workspace.id)}
+                onClick={() => selectWorkspace(workspace.id)}
                 type="button"
               >
                 <span>{workspace.name}</span>
@@ -259,7 +127,10 @@ export function App() {
                 <button
                   className="button-secondary"
                   onClick={() =>
-                    setTextModalState({ type: "edit-workspace", workspace })
+                    openTextPopup({
+                      type: PopupType.EDIT_WORKSPACE,
+                      workspace,
+                    })
                   }
                   type="button"
                 >
@@ -280,23 +151,13 @@ export function App() {
 
       {selectedWorkspace ? (
         <WorkspaceView
-          onCreateBoard={(workspace) =>
-            setTextModalState({ type: "create-board", workspace })
-          }
-          onCreateTask={(workspace, board) =>
-            setTextModalState({ board, type: "create-task", workspace })
-          }
+          onCreateBoard={handleCreateBoard}
+          onCreateTask={handleCreateTask}
           onDeleteBoard={handleDeleteBoard}
           onDeleteWorkspace={handleDeleteWorkspace}
-          onEditBoard={(workspace, board) =>
-            setTextModalState({ board, type: "edit-board", workspace })
-          }
-          onEditWorkspace={(workspace) =>
-            setTextModalState({ type: "edit-workspace", workspace })
-          }
-          onMoveBoard={(workspace, board, direction) =>
-            reorderBoard(workspace.id, board.id, direction)
-          }
+          onEditBoard={handleEditBoard}
+          onEditWorkspace={handleEditWorkspace}
+          onMoveBoard={handleMoveBoard}
           workspace={selectedWorkspace}
         />
       ) : (
@@ -306,8 +167,7 @@ export function App() {
         </section>
       )}
 
-      {renderTextModal()}
-      {renderConfirmDialog()}
+      <PopupRoot />
     </main>
   );
 }

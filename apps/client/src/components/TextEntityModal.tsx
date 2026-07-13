@@ -1,16 +1,10 @@
-import { useId, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useId } from "react";
+import { useForm } from "react-hook-form";
+import { textEntitySchema } from "../validation/textEntitySchemas";
+import type { TextEntityFormValues } from "../types/forms";
+import type { TextEntityModalProps } from "../types/props";
 import { Modal } from "./Modal";
-
-interface TextEntityModalProps {
-  initialValue?: string;
-  inputLabel: string;
-  placeholder?: string;
-  submitLabel: string;
-  title: string;
-  validate?: (value: string) => string | null;
-  onRequestClose: () => void;
-  onSubmit: (value: string) => void;
-}
 
 export function TextEntityModal({
   initialValue = "",
@@ -18,48 +12,38 @@ export function TextEntityModal({
   onRequestClose,
   onSubmit,
   placeholder,
+  schema = textEntitySchema,
   submitLabel,
   title,
-  validate,
 }: TextEntityModalProps) {
   const inputId = useId();
-  const [error, setError] = useState<string | null>(null);
-  const [value, setValue] = useState(initialValue);
+  const {
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    register,
+  } = useForm<TextEntityFormValues>({
+    defaultValues: { value: initialValue },
+    mode: "onSubmit",
+    resolver: zodResolver(schema),
+  });
 
   return (
     <Modal onRequestClose={onRequestClose} title={title}>
       <form
         className="modal-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const nextValue = value.trim();
-          const validationError = validate?.(nextValue) ?? null;
-          if (validationError) {
-            setError(validationError);
-            return;
-          }
-          if (!nextValue) {
-            setError("Name is required.");
-            return;
-          }
-
-          setError(null);
-          onSubmit(nextValue);
-        }}
+        onSubmit={handleSubmit(({ value }) => onSubmit(value))}
       >
         <label htmlFor={inputId}>{inputLabel}</label>
         <input
           autoFocus
           id={inputId}
-          onChange={(event) => {
-            setValue(event.target.value);
-            setError(null);
-          }}
           placeholder={placeholder}
           type="text"
-          value={value}
+          {...register("value")}
         />
-        {error ? <p className="form-error">{error}</p> : null}
+        {errors.value?.message ? (
+          <p className="form-error">{errors.value.message}</p>
+        ) : null}
 
         <footer className="modal-actions">
           <button
@@ -69,7 +53,11 @@ export function TextEntityModal({
           >
             Cancel
           </button>
-          <button className="button-primary" type="submit">
+          <button
+            className="button-primary"
+            disabled={isSubmitting}
+            type="submit"
+          >
             {submitLabel}
           </button>
         </footer>
