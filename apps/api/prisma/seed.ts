@@ -1,16 +1,75 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const demoWorkspaceId = "11111111-1111-4111-8111-111111111111";
 
 async function main() {
-  await prisma.workspace.upsert({
+  const user = await prisma.user.upsert({
     where: {
-      id: "demo-workspace",
+      email: "demo@example.com",
     },
     update: {},
     create: {
-      id: "demo-workspace",
+      email: "demo@example.com",
+      name: "Demo User",
+      passwordHash:
+        "$2b$12$zFfmc.lNEIvjYAyWKH7eW.EoQhxtjvUQn4NwEAdBG94kjGkR6gQKu",
+    },
+  });
+
+  await prisma.workspace.upsert({
+    where: {
+      id: demoWorkspaceId,
+    },
+    update: {
+      ownerId: user.id,
+      members: {
+        upsert: {
+          where: {
+            workspaceId_userId: {
+              workspaceId: demoWorkspaceId,
+              userId: user.id,
+            },
+          },
+          update: {
+            role: "OWNER",
+          },
+          create: {
+            userId: user.id,
+            role: "OWNER",
+          },
+        },
+      },
+    },
+    create: {
+      id: demoWorkspaceId,
       name: "Demo workspace",
+      ownerId: user.id,
+      members: {
+        create: {
+          userId: user.id,
+          role: "OWNER",
+        },
+      },
+      boards: {
+        create: [
+          {
+            name: "Development",
+            tasks: {
+              create: [
+                { title: "Setup project" },
+                { title: "Implement auth" },
+              ],
+            },
+          },
+          {
+            name: "Design",
+            tasks: {
+              create: [{ title: "Create UI kit" }],
+            },
+          },
+        ],
+      },
     },
   });
 }
