@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { PopupRoot } from "../components/PopupRoot";
 import { WorkspaceView } from "../features/workspaces";
-import { usePopupStore } from "../store/usePopupStore";
-import { useWorkspaceStore } from "../store/useWorkspaceStore";
+import { useWorkspaces } from "../store/useWorkspaceStore";
 import type { Board, Workspace } from "../types/workspace";
 import { PopupType } from "../types/popup";
 

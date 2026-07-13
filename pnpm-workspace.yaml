@@ -1,4 +1,7 @@
 packages:
   - "apps/*"
 allowBuilds:
-  '@parcel/watcher': true
+  "@parcel/watcher": true
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
