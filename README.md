@@ -1,318 +1,25 @@
 # Rangein Task System
 
-Rangein Task System is a training task-management application built as a pnpm
-monorepo. The frontend is a React/Vite app, and the backend is a NestJS API with
-PostgreSQL, Prisma, Passport JWT auth, and Zod request validation.
+Учебный task-management проект в формате pnpm monorepo. В проекте есть React
+клиент и NestJS API с PostgreSQL, Prisma, JWT-авторизацией и Zod-валидацией.
 
-The current backend domain contains users, workspaces, workspace members, boards,
-and tasks. Workspaces have owners and members, and protected endpoints enforce
-JWT authentication plus workspace access checks on the backend.
+## Что Уже Реализовано
 
-## Apps
+- Авторизация: `POST /api/auth/register`, `POST /api/auth/login`.
+- Защищенный CRUD для workspaces, boards и tasks.
+- Проверка доступа на backend: пользователь видит только свои workspace или те,
+  куда он добавлен участником.
+- Prisma-модели: `User`, `Workspace`, `WorkspaceMember`, `Board`, `Task`.
+- React клиент получает данные через `axios` + React Query, а не из моков.
+- Zustand оставлен только для UI-состояния: выбранный workspace.
 
-- `apps/client` - React, TypeScript, Vite frontend.
-- `apps/api` - NestJS, PostgreSQL, Prisma backend.
+## Стек
 
-## Requirements
+- Frontend: React, TypeScript, Vite, Zustand, React Query, axios.
+- Backend: NestJS, Prisma, PostgreSQL, Passport JWT, Zod.
+- Инфраструктура: pnpm workspaces, Docker Compose для PostgreSQL.
 
-- Node.js
-- pnpm
-- Docker Desktop or another running PostgreSQL server
-
-## Environment
-
-Create `apps/api/.env`:
-
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rangein_task_system?schema=public"
-JWT_SECRET="change-me-before-development"
-JWT_EXPIRES_IN="7d"
-PORT=3000
-CORS_ORIGIN="http://localhost:5173"
-```
-
-Start PostgreSQL with Docker:
-
-```bash
-docker compose up -d postgres
-```
-
-Prepare Prisma:
-
-```bash
-pnpm --dir apps/api prisma:generate
-pnpm --dir apps/api db:push
-pnpm --dir apps/api db:seed
-```
-
-If Docker Desktop is not available, run any PostgreSQL server and update
-`DATABASE_URL`.
-
-## Scripts
-
-Root scripts:
-
-```bash
-pnpm dev
-pnpm build
-pnpm lint
-```
-
-Client scripts:
-
-```bash
-pnpm client:dev
-pnpm client:build
-pnpm client:lint
-pnpm client:preview
-```
-
-API scripts:
-
-```bash
-pnpm api:dev
-pnpm api:build
-pnpm api:lint
-pnpm api:prisma:generate
-pnpm api:prisma:migrate
-pnpm api:prisma:studio
-pnpm --dir apps/api db:push
-pnpm --dir apps/api db:seed
-```
-
-## API
-
-Base URL:
-
-```text
-http://localhost:3000/api
-```
-
-All endpoints except `/auth/register` and `/auth/login` require:
-
-```http
-Authorization: Bearer <accessToken>
-```
-
-Access rules:
-
-- workspace owners can read and mutate workspace data;
-- workspace owners can add members;
-- workspace members can read workspace, board, and task data;
-- users without workspace access receive `403 Forbidden`;
-- missing resources still return `404 Not Found`;
-- client-provided ownership is ignored.
-
-Auth:
-
-```http
-POST /auth/register
-POST /auth/login
-```
-
-Register body:
-
-```json
-{
-  "email": "demo@example.com",
-  "name": "Demo User",
-  "password": "password123"
-}
-```
-
-Login body:
-
-```json
-{
-  "email": "demo@example.com",
-  "password": "password123"
-}
-```
-
-Auth response:
-
-```json
-{
-  "accessToken": "jwt-token",
-  "user": {
-    "id": "user-id",
-    "email": "demo@example.com",
-    "name": "Demo User"
-  }
-}
-```
-
-Users:
-
-```http
-GET /users
-GET /users/:id
-```
-
-Requires JWT.
-
-Workspaces:
-
-```http
-GET /workspaces
-GET /workspaces/:id
-POST /workspaces
-PATCH /workspaces/:id
-DELETE /workspaces/:id
-GET /workspaces/:id/members
-POST /workspaces/:id/members
-```
-
-Requires JWT. `GET /workspaces` returns only workspaces owned by the current user
-or workspaces where the current user is a member.
-
-Create workspace body:
-
-```json
-{
-  "name": "Work"
-}
-```
-
-The owner is always taken from the JWT user id.
-
-Update workspace body:
-
-```json
-{
-  "name": "Updated workspace"
-}
-```
-
-Only the workspace owner can update or delete a workspace.
-
-Add workspace member body:
-
-```json
-{
-  "email": "member@example.com"
-}
-```
-
-or:
-
-```json
-{
-  "userId": "user-uuid"
-}
-```
-
-Only the workspace owner can add members. The API stores this in the
-`WorkspaceMember` join table.
-
-Boards:
-
-```http
-GET /boards
-GET /boards?workspaceId=:workspaceId
-GET /boards/:id
-POST /boards
-PATCH /boards/:id
-DELETE /boards/:id
-```
-
-Requires JWT. Read endpoints return only boards from accessible workspaces.
-Create/update/delete require workspace owner access.
-
-Create board body:
-
-```json
-{
-  "name": "Development",
-  "workspaceId": "workspace-uuid"
-}
-```
-
-Update board body:
-
-```json
-{
-  "name": "Updated board"
-}
-```
-
-Tasks:
-
-```http
-GET /tasks
-GET /tasks?boardId=:boardId
-GET /tasks/:id
-POST /tasks
-PATCH /tasks/:id
-DELETE /tasks/:id
-```
-
-Requires JWT. Read endpoints return only tasks from accessible workspaces.
-Create/update/delete require owner access to the task's workspace.
-
-Create task body:
-
-```json
-{
-  "title": "Setup project",
-  "boardId": "board-uuid"
-}
-```
-
-Update task body:
-
-```json
-{
-  "title": "Updated task"
-}
-```
-
-## Validation And Checks
-
-Incoming request bodies, route params, and supported query ids are validated with
-Zod schemas. Invalid values return `400 Bad Request` with a structured validation
-error.
-
-Useful checks:
-
-```bash
-pnpm --dir apps/api prisma:generate
-pnpm --dir apps/api build
-pnpm --dir apps/api lint
-pnpm --dir apps/api db:push
-```
-
-Manual API checks:
-
-```bash
-curl -X POST http://localhost:3000/api/auth/register ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\":\"demo@example.com\",\"name\":\"Demo User\",\"password\":\"password123\"}"
-
-curl -X POST http://localhost:3000/api/auth/login ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\":\"demo@example.com\",\"password\":\"password123\"}"
-
-curl http://localhost:3000/api/workspaces ^
-  -H "Authorization: Bearer <accessToken>"
-
-curl -X POST http://localhost:3000/api/workspaces ^
-  -H "Authorization: Bearer <accessToken>" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"name\":\"Work\"}"
-```
-
-Security status:
-
-- JWT issuing is implemented with Passport/JWT.
-- CRUD controllers are protected by `JwtAuthGuard`.
-- Passwords are stored as hashes.
-- DTO validation is implemented for auth, CRUD bodies, route params, and query ids.
-- Backend services enforce workspace access before returning data.
-- Workspace, board, and task mutations require workspace owner access.
-- Owners can add existing users to a workspace through `WorkspaceMember`.
-
-## Project Structure
+## Структура
 
 ```text
 apps/api/src
@@ -337,12 +44,180 @@ apps/api/src
   prisma/
 
 apps/client/src
+  api/
   app/
   components/
   features/
-  mocks/
+    workspaces/
   store/
   types/
   utils/
   validation/
 ```
+
+Backend разложен по доменным модулям. `common/` хранит общие guards, decorators,
+pipes и Prisma helpers. `prisma/` хранит подключение Prisma к NestJS. DTO лежат
+внутри своих модулей, потому что схемы создания workspace, board и task относятся
+к конкретной бизнес-области.
+
+## Запуск
+
+Установить зависимости:
+
+```bash
+pnpm install
+```
+
+Создать `apps/api/.env`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rangein_task_system?schema=public"
+JWT_SECRET="change-me-before-development"
+JWT_EXPIRES_IN="7d"
+PORT=3000
+CORS_ORIGIN="http://localhost:5173"
+```
+
+Опционально создать `apps/client/.env`, если API запущен не на стандартном URL:
+
+```env
+VITE_API_URL="http://localhost:3000/api"
+VITE_DEMO_EMAIL="demo@example.com"
+VITE_DEMO_PASSWORD="password123"
+```
+
+Поднять PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+Подготовить базу:
+
+```bash
+pnpm --dir apps/api prisma:generate
+pnpm --dir apps/api db:push
+pnpm --dir apps/api db:seed
+```
+
+Запустить API и клиент:
+
+```bash
+pnpm api:dev
+pnpm client:dev
+```
+
+Клиент будет на `http://localhost:5173`, API на `http://localhost:3000/api`.
+
+## Frontend Data Flow
+
+Раньше `useWorkspaceStore` хранил `workspacesMock`. Сейчас моки удалены:
+
+- `apps/client/src/api/apiClient.ts` создает общий axios client;
+- `apps/client/src/api/workspacesApi.ts` содержит HTTP-функции;
+- `apps/client/src/features/workspaces/useWorkspacesQuery.ts` содержит React
+  Query hooks для загрузки и mutations;
+- `apps/client/src/store/useWorkspaceStore.ts` хранит только
+  `selectedWorkspaceId`.
+
+Для удобства демо клиент автоматически логинится под seed-пользователем
+`demo@example.com / password123` и кладет JWT в `localStorage`. Поэтому перед
+демонстрацией важно выполнить `db:seed`.
+
+Подключенные операции:
+
+```http
+GET /api/workspaces
+POST /api/workspaces
+PATCH /api/workspaces/:id
+DELETE /api/workspaces/:id
+POST /api/boards
+PATCH /api/boards/:id
+DELETE /api/boards/:id
+POST /api/tasks
+```
+
+Для соответствия формулировке задания также доступны singular aliases:
+
+```http
+POST /api/workspace
+DELETE /api/board/:id
+```
+
+Основной стиль API остается plural REST: `/workspaces`, `/boards`, `/tasks`.
+
+## API
+
+Все endpoints, кроме auth, требуют:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+Auth:
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+```
+
+Workspaces:
+
+```http
+GET /api/workspaces
+GET /api/workspaces/:id
+POST /api/workspaces
+PATCH /api/workspaces/:id
+DELETE /api/workspaces/:id
+GET /api/workspaces/:id/members
+POST /api/workspaces/:id/members
+```
+
+Boards:
+
+```http
+GET /api/boards
+GET /api/boards?workspaceId=:workspaceId
+GET /api/boards/:id
+POST /api/boards
+PATCH /api/boards/:id
+DELETE /api/boards/:id
+```
+
+Tasks:
+
+```http
+GET /api/tasks
+GET /api/tasks?boardId=:boardId
+GET /api/tasks/:id
+POST /api/tasks
+PATCH /api/tasks/:id
+DELETE /api/tasks/:id
+```
+
+## Что Объяснять Ментору
+
+1. Backend разделен по модулям: auth отвечает за JWT, users за пользователей,
+   workspaces за рабочие пространства и участников, boards/tasks за сущности
+   доски.
+2. Контроллеры принимают HTTP-запросы, DTO/Zod валидируют входные данные,
+   сервисы выполняют бизнес-логику и обращаются к Prisma.
+3. `JwtAuthGuard` защищает приватные endpoints, а `WorkspaceAccessService`
+   проверяет права на уровне workspace.
+4. Frontend больше не создает id через `createId` и не читает `workspacesMock`.
+   Данные приходят из backend, а после mutations React Query инвалидирует
+   `workspaces` query и перезагружает актуальное состояние.
+5. Zustand не дублирует серверные данные. Он хранит только выбранный workspace,
+   потому что это UI-состояние, а не состояние базы.
+
+## Проверки
+
+```bash
+pnpm client:build
+pnpm api:build
+pnpm lint
+```
+
+Ограничение текущей версии: кнопки Left/Right меняют порядок колонок только в
+React Query cache. В базе пока нет поля `position`, поэтому после перезагрузки
+порядок вернется к `createdAt`.

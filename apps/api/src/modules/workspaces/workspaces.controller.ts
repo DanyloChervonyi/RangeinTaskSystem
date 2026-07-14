@@ -25,7 +25,7 @@ import {
 } from "./dto/workspace.dto";
 import { WorkspacesService } from "./workspaces.service";
 
-@Controller("workspaces")
+@Controller(["workspaces", "workspace"])
 @UseGuards(JwtAuthGuard)
 export class WorkspacesController {
   constructor(private readonly workspacesService: WorkspacesService) {}

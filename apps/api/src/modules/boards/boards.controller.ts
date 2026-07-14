@@ -22,7 +22,7 @@ import {
   updateBoardSchema,
 } from "./dto/board.dto";
 
-@Controller("boards")
+@Controller(["boards", "board"])
 @UseGuards(JwtAuthGuard)
 export class BoardsController {
   constructor(private readonly boardsService: BoardsService) {}
