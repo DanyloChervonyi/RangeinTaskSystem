@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TextEntityModal } from "./TextEntityModal";
 import { usePopupStore } from "../store/usePopupStore";
-import { useWorkspaceStore } from "../store/useWorkspaceStore";
+import { useWorkspaceMutations } from "../features/workspaces/useWorkspacesQuery";
 import { workspaceNameSchema } from "../validation/textEntitySchemas";
 import { PopupType } from "../types/popup";
 
@@ -16,11 +16,8 @@ export function PopupRoot() {
   const requestTextPopupClose = usePopupStore(
     (state) => state.requestTextPopupClose,
   );
-  const addBoard = useWorkspaceStore((state) => state.addBoard);
-  const addTask = useWorkspaceStore((state) => state.addTask);
-  const addWorkspace = useWorkspaceStore((state) => state.addWorkspace);
-  const updateBoard = useWorkspaceStore((state) => state.updateBoard);
-  const updateWorkspace = useWorkspaceStore((state) => state.updateWorkspace);
+  const { addBoard, addTask, addWorkspace, updateBoard, updateWorkspace } =
+    useWorkspaceMutations();
   const confirmDialog = confirmMetadata ? (
     <ConfirmDialog
       confirmLabel={confirmMetadata.confirmLabel}
@@ -47,8 +44,8 @@ export function PopupRoot() {
                 message: `Create workspace "${name}"?`,
                 title: "Create workspace?",
               },
-              () => {
-                addWorkspace({ name });
+              async () => {
+                await addWorkspace({ name });
                 closeTextPopup();
                 closeConfirm();
               },
@@ -73,8 +70,11 @@ export function PopupRoot() {
                 message: `Rename workspace "${textPopupMetadata.workspace.name}" to "${name}"?`,
                 title: "Edit workspace?",
               },
-              () => {
-                updateWorkspace(textPopupMetadata.workspace.id, { name });
+              async () => {
+                await updateWorkspace({
+                  id: textPopupMetadata.workspace.id,
+                  name,
+                });
                 closeTextPopup();
                 closeConfirm();
               },
@@ -97,8 +97,11 @@ export function PopupRoot() {
                 message: `Create column "${name}" in "${textPopupMetadata.workspace.name}"?`,
                 title: "Create column?",
               },
-              () => {
-                addBoard(textPopupMetadata.workspace.id, { name });
+              async () => {
+                await addBoard({
+                  name,
+                  workspaceId: textPopupMetadata.workspace.id,
+                });
                 closeTextPopup();
                 closeConfirm();
               },
@@ -122,14 +125,11 @@ export function PopupRoot() {
                 message: `Rename column "${textPopupMetadata.board.name}" to "${name}"?`,
                 title: "Edit column?",
               },
-              () => {
-                updateBoard(
-                  textPopupMetadata.workspace.id,
-                  textPopupMetadata.board.id,
-                  {
-                    name,
-                  },
-                );
+              async () => {
+                await updateBoard({
+                  id: textPopupMetadata.board.id,
+                  name,
+                });
                 closeTextPopup();
                 closeConfirm();
               },
@@ -151,14 +151,11 @@ export function PopupRoot() {
                 message: `Create task "${title}" in "${textPopupMetadata.board.name}"?`,
                 title: "Create task?",
               },
-              () => {
-                addTask(
-                  textPopupMetadata.workspace.id,
-                  textPopupMetadata.board.id,
-                  {
-                    title,
-                  },
-                );
+              async () => {
+                await addTask({
+                  boardId: textPopupMetadata.board.id,
+                  title,
+                });
                 closeTextPopup();
                 closeConfirm();
               },

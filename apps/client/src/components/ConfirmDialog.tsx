@@ -6,7 +6,7 @@ interface ConfirmDialogProps {
   message: string;
   title: string;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
 }
 
 export function ConfirmDialog({

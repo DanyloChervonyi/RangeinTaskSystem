@@ -32,5 +32,5 @@ export interface TextEntityModalProps {
   submitLabel: string;
   title: string;
   onRequestClose: () => void;
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string) => Promise<void> | void;
 }

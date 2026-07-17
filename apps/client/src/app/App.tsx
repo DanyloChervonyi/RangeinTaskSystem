@@ -1,29 +1,23 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { PopupRoot } from "../components/PopupRoot";
 import { WorkspaceView } from "../features/workspaces";
-import { useWorkspaces } from "../store/useWorkspaceStore";
+import {
+  useWorkspaceMutations,
+  useWorkspacesQuery,
+} from "../features/workspaces/useWorkspacesQuery";
+import { useWorkspaceStore } from "../store/useWorkspaceStore";
+import { usePopupStore } from "../store/usePopupStore";
 import type { Board, Workspace } from "../types/workspace";
 import { PopupType } from "../types/popup";
 
 export function App() {
-  const workspaces = useWorkspaceStore((state) => state.workspaces);
-  const selectedWorkspaceId = useWorkspaceStore(
-    (state) => state.selectedWorkspaceId,
-  );
-  const deleteBoard = useWorkspaceStore((state) => state.deleteBoard);
-  const deleteWorkspace = useWorkspaceStore((state) => state.deleteWorkspace);
-  const reorderBoard = useWorkspaceStore((state) => state.reorderBoard);
+  const { isError, isLoading, selectedWorkspace, workspaces } =
+    useWorkspacesQuery();
+  const { deleteBoard, deleteWorkspace, reorderBoard } = useWorkspaceMutations();
   const selectWorkspace = useWorkspaceStore((state) => state.selectWorkspace);
   const openConfirm = usePopupStore((state) => state.openConfirm);
   const openTextPopup = usePopupStore((state) => state.openTextPopup);
   const closeConfirm = usePopupStore((state) => state.closeConfirm);
-
-  const selectedWorkspace = useMemo(
-    () =>
-      workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ??
-      workspaces[0],
-    [selectedWorkspaceId, workspaces],
-  );
 
   const handleDeleteWorkspace = useCallback(
     (workspace: Workspace) => {
@@ -33,8 +27,8 @@ export function App() {
           message: `Delete workspace "${workspace.name}" and all its columns?`,
           title: "Delete workspace?",
         },
-        () => {
-          deleteWorkspace(workspace.id);
+        async () => {
+          await deleteWorkspace(workspace.id);
           closeConfirm();
         },
       );
@@ -43,15 +37,15 @@ export function App() {
   );
 
   const handleDeleteBoard = useCallback(
-    (workspace: Workspace, board: Board) => {
+    (_workspace: Workspace, board: Board) => {
       openConfirm(
         {
           confirmLabel: "Delete",
           message: `Delete column "${board.name}" and all its tasks?`,
           title: "Delete column?",
         },
-        () => {
-          deleteBoard(workspace.id, board.id);
+        async () => {
+          await deleteBoard(board.id);
           closeConfirm();
         },
       );
@@ -93,6 +87,27 @@ export function App() {
     },
     [reorderBoard],
   );
+
+  if (isLoading) {
+    return (
+      <main className="app-shell">
+        <section className="workspace-view empty-state">
+          <h2>Loading workspaces...</h2>
+        </section>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="app-shell">
+        <section className="workspace-view empty-state">
+          <h2>Could not load workspaces</h2>
+          <p>Check that the API, database, and demo user seed are running.</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="app-shell">
