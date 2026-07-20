@@ -5,24 +5,13 @@ import {
   boardInclude,
 } from "../../common/prisma/prisma-includes";
 import { PrismaService } from "../../prisma/prisma.service";
-import { WorkspaceAccessService } from "../workspaces/workspace-access.service";
 import type { CreateBoardDto, UpdateBoardDto } from "./dto/board.dto";
 
 @Injectable()
 export class BoardsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly workspaceAccessService: WorkspaceAccessService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userId: string, workspaceId?: string) {
-    if (workspaceId) {
-      await this.workspaceAccessService.assertWorkspaceAccess(
-        userId,
-        workspaceId,
-      );
-    }
-
+  findAll(userId: string, workspaceId?: string) {
     return this.prisma.board.findMany({
       where: workspaceId
         ? { workspaceId }
@@ -45,9 +34,7 @@ export class BoardsService {
     });
   }
 
-  async findOne(userId: string, id: string) {
-    await this.workspaceAccessService.assertBoardWorkspaceAccess(userId, id);
-
+  async findOne(id: string) {
     const board = await this.prisma.board.findUnique({
       where: { id },
       include: boardInclude,
@@ -55,21 +42,14 @@ export class BoardsService {
     return ensureFound(board, "Board not found");
   }
 
-  async create(userId: string, dto: CreateBoardDto) {
-    await this.workspaceAccessService.assertWorkspaceOwner(
-      userId,
-      dto.workspaceId,
-    );
-
+  create(dto: CreateBoardDto) {
     return this.prisma.board.create({
       data: dto,
       include: boardInclude,
     });
   }
 
-  async update(userId: string, id: string, dto: UpdateBoardDto) {
-    await this.workspaceAccessService.assertBoardWorkspaceOwner(userId, id);
-
+  update(id: string, dto: UpdateBoardDto) {
     return this.prisma.board.update({
       where: { id },
       data: dto,
@@ -77,9 +57,7 @@ export class BoardsService {
     });
   }
 
-  async remove(userId: string, id: string) {
-    await this.workspaceAccessService.assertBoardWorkspaceOwner(userId, id);
-
+  remove(id: string) {
     return this.prisma.board.delete({
       where: { id },
       include: boardInclude,

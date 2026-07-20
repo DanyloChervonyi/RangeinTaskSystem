@@ -13,6 +13,7 @@ export interface Workspace {
   id: string;
   name: string;
   boards: Board[];
+  tasksCount: number;
 }
 export interface WorkspacesMock {
   workspaces: Workspace[];

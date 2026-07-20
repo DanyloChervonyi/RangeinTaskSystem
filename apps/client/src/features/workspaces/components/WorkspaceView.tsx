@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { getWorkspaceTasksCount } from "../../../utils/getWorkspaceTasksCount";
 import { BoardColumn } from "./BoardColumn";
 import type { WorkspaceViewProps } from "../../../types/props";
 
@@ -21,8 +20,7 @@ function WorkspaceViewComponent({
           <h2 id="workspace-title">{workspace.name}</h2>
         </div>
         <p className="workspace-summary">
-          {workspace.boards.length} boards - {getWorkspaceTasksCount(workspace)}{" "}
-          tasks
+          {workspace.boards.length} boards - {workspace.tasksCount} tasks
         </p>
         <div className="item-actions">
           <button
