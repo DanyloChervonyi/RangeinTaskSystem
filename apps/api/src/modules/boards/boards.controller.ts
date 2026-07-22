@@ -14,6 +14,12 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { idSchema, optionalIdSchema } from "../../common/schemas/id.schema";
 import type { JwtUser } from "../auth/types/jwt.types";
+import {
+  BoardCreateOwnerGuard,
+  BoardListAccessGuard,
+  BoardOwnerGuard,
+  BoardReadAccessGuard,
+} from "../../common/guards/boards-access.guards";
 import { BoardsService } from "./boards.service";
 import {
   type CreateBoardDto,
@@ -28,6 +34,7 @@ export class BoardsController {
   constructor(private readonly boardsService: BoardsService) {}
 
   @Get()
+  @UseGuards(BoardListAccessGuard)
   findAll(
     @CurrentUser() user: JwtUser,
     @Query("workspaceId", new ZodValidationPipe(optionalIdSchema))
@@ -37,35 +44,33 @@ export class BoardsController {
   }
 
   @Get(":id")
-  findOne(
-    @CurrentUser() user: JwtUser,
-    @Param("id", new ZodValidationPipe(idSchema)) id: string,
-  ) {
-    return this.boardsService.findOne(user.id, id);
+  @UseGuards(BoardReadAccessGuard)
+  findOne(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
+    return this.boardsService.findOne(id);
   }
 
   @Post()
+  @UseGuards(BoardCreateOwnerGuard)
   create(
-    @CurrentUser() user: JwtUser,
-    @Body(new ZodValidationPipe(createBoardSchema)) createBoardDto: CreateBoardDto,
+    @Body(new ZodValidationPipe(createBoardSchema))
+    createBoardDto: CreateBoardDto,
   ) {
-    return this.boardsService.create(user.id, createBoardDto);
+    return this.boardsService.create(createBoardDto);
   }
 
   @Patch(":id")
+  @UseGuards(BoardOwnerGuard)
   update(
-    @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
-    @Body(new ZodValidationPipe(updateBoardSchema)) updateBoardDto: UpdateBoardDto,
+    @Body(new ZodValidationPipe(updateBoardSchema))
+    updateBoardDto: UpdateBoardDto,
   ) {
-    return this.boardsService.update(user.id, id, updateBoardDto);
+    return this.boardsService.update(id, updateBoardDto);
   }
 
   @Delete(":id")
-  remove(
-    @CurrentUser() user: JwtUser,
-    @Param("id", new ZodValidationPipe(idSchema)) id: string,
-  ) {
-    return this.boardsService.remove(user.id, id);
+  @UseGuards(BoardOwnerGuard)
+  remove(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
+    return this.boardsService.remove(id);
   }
 }

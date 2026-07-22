@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 import { ensureFound } from "../../common/prisma/ensure-found";
 import {
   workspaceInclude,
@@ -12,6 +13,10 @@ import type {
 } from "./dto/workspace.dto";
 import { WorkspaceAccessService } from "./workspace-access.service";
 
+type WorkspaceWithBoardsAndTasks = Awaited<
+  Prisma.WorkspaceGetPayload<{ include: typeof workspaceInclude }>
+>;
+
 @Injectable()
 export class WorkspacesService {
   constructor(
@@ -19,8 +24,8 @@ export class WorkspacesService {
     private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
-  findAll(userId: string) {
-    return this.prisma.workspace.findMany({
+  async findAll(userId: string) {
+    const workspaces = await this.prisma.workspace.findMany({
       where: {
         OR: [
           { ownerId: userId },
@@ -38,20 +43,20 @@ export class WorkspacesService {
         createdAt: "desc",
       },
     });
+    return workspaces.map((workspace) => this.addTasksCount(workspace));
   }
 
   async findOne(userId: string, id: string) {
     await this.workspaceAccessService.assertWorkspaceAccess(userId, id);
-
     const workspace = await this.prisma.workspace.findUnique({
       where: { id },
       include: workspaceInclude,
     });
-    return ensureFound(workspace, "Workspace not found");
+    return this.addTasksCount(ensureFound(workspace, "Workspace not found"));
   }
 
-  create(userId: string, dto: CreateWorkspaceDto) {
-    return this.prisma.workspace.create({
+  async create(userId: string, dto: CreateWorkspaceDto) {
+    const workspace = await this.prisma.workspace.create({
       data: {
         name: dto.name,
         ownerId: userId,
@@ -64,25 +69,26 @@ export class WorkspacesService {
       },
       include: workspaceInclude,
     });
+    return this.addTasksCount(workspace);
   }
 
   async update(userId: string, id: string, dto: UpdateWorkspaceDto) {
     await this.workspaceAccessService.assertWorkspaceOwner(userId, id);
-
-    return this.prisma.workspace.update({
+    const workspace = await this.prisma.workspace.update({
       where: { id },
       data: dto,
       include: workspaceInclude,
     });
+    return this.addTasksCount(workspace);
   }
 
   async remove(userId: string, id: string) {
     await this.workspaceAccessService.assertWorkspaceOwner(userId, id);
-
-    return this.prisma.workspace.delete({
+    const workspace = await this.prisma.workspace.delete({
       where: { id },
       include: workspaceInclude,
     });
+    return this.addTasksCount(workspace);
   }
 
   async findMembers(userId: string, workspaceId: string) {
@@ -90,7 +96,6 @@ export class WorkspacesService {
       userId,
       workspaceId,
     );
-
     return this.prisma.workspaceMember.findMany({
       where: { workspaceId },
       include: workspaceMemberInclude,
@@ -119,11 +124,7 @@ export class WorkspacesService {
           where: { email: dto.email },
           select: { id: true },
         });
-
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-
+    if (!user) throw new NotFoundException("User not found");
     return this.prisma.workspaceMember.upsert({
       where: {
         workspaceId_userId: {
@@ -139,5 +140,15 @@ export class WorkspacesService {
       },
       include: workspaceMemberInclude,
     });
+  }
+
+  private addTasksCount(workspace: WorkspaceWithBoardsAndTasks) {
+    return {
+      ...workspace,
+      tasksCount: workspace.boards.reduce(
+        (tasksCount, board) => tasksCount + board.tasks.length,
+        0,
+      ),
+    };
   }
 }

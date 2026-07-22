@@ -2,7 +2,7 @@
 
 A task management tutorial project in pnpm monorepo format. The project includes a React client and a NestJS API with PostgreSQL, Prisma, JWT authentication, and Zod validation.
 
-## Что Уже Реализовано
+## Implemented
 
 - Authorization: `POST /api/auth/register`, `POST /api/auth/login`.
 - Secure CRUD for workspaces, boards, and tasks.
@@ -49,7 +49,6 @@ apps/client/src
     workspaces/
   store/
   types/
-  utils/
   validation/
 ```
 
@@ -117,6 +116,8 @@ Previously, `useWorkspaceStore` stored `workspacesMock`. The mocks have now been
   Query hooks for loading and mutations;
 - `apps/client/src/store/useWorkspaceStore.ts` only stores
   `selectedWorkspaceId`.
+- Workspace task totals come from the API as `tasksCount`; the client only
+  displays the value and does not recalculate it from nested boards.
 
 For demo convenience, the client automatically logs in with the seed user
 `demo@example.com/password123` and stores the JWT in `localStorage`. Therefore, it is important to run `db:seed` before
@@ -200,7 +201,8 @@ DELETE /api/tasks/:id
 2. Controllers receive HTTP requests, DTOs/Zods validate input data,
    services execute business logic and access Prisma.
 3. `JwtAuthGuard` protects private endpoints, and `WorkspaceAccessService`
-   checks permissions at the workspace level.
+   checks permissions at the workspace level. Board endpoints attach dedicated
+   guards so access checks stay outside `BoardsService`.
 4. The frontend no longer creates ids via `createId` and doesn't read `workspacesMock`.
    Data comes from the backend, and after mutations, React Query invalidates the
    `workspaces` query and reloads the current state.
