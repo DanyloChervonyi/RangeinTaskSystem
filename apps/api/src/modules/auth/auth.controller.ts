@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from "@nestjs/common";
+import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { AuthService } from "./auth.service";
 import {
   type LoginDto,
   loginSchema,
@@ -10,17 +11,17 @@ import {
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly rabbitmqClient: RabbitmqClientService) {}
 
   @Post("register")
   register(
     @Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto,
   ) {
-    return this.authService.register(registerDto);
+    return this.rabbitmqClient.request(MessagePatterns.auth.register, registerDto);
   }
 
   @Post("login")
   login(@Body(new ZodValidationPipe(loginSchema)) loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    return this.rabbitmqClient.request(MessagePatterns.auth.login, loginDto);
   }
 }

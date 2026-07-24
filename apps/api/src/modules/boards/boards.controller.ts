@@ -20,7 +20,8 @@ import {
   BoardOwnerGuard,
   BoardReadAccessGuard,
 } from "../../common/guards/boards-access.guards";
-import { BoardsService } from "./boards.service";
+import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 import {
   type CreateBoardDto,
   createBoardSchema,
@@ -31,7 +32,7 @@ import {
 @Controller(["boards", "board"])
 @UseGuards(JwtAuthGuard)
 export class BoardsController {
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(private readonly rabbitmqClient: RabbitmqClientService) {}
 
   @Get()
   @UseGuards(BoardListAccessGuard)
@@ -40,13 +41,16 @@ export class BoardsController {
     @Query("workspaceId", new ZodValidationPipe(optionalIdSchema))
     workspaceId?: string,
   ) {
-    return this.boardsService.findAll(user.id, workspaceId);
+    return this.rabbitmqClient.request(MessagePatterns.boards.findAll, {
+      userId: user.id,
+      workspaceId,
+    });
   }
 
   @Get(":id")
   @UseGuards(BoardReadAccessGuard)
   findOne(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
-    return this.boardsService.findOne(id);
+    return this.rabbitmqClient.request(MessagePatterns.boards.findOne, id);
   }
 
   @Post()
@@ -55,7 +59,10 @@ export class BoardsController {
     @Body(new ZodValidationPipe(createBoardSchema))
     createBoardDto: CreateBoardDto,
   ) {
-    return this.boardsService.create(createBoardDto);
+    return this.rabbitmqClient.request(
+      MessagePatterns.boards.create,
+      createBoardDto,
+    );
   }
 
   @Patch(":id")
@@ -65,12 +72,15 @@ export class BoardsController {
     @Body(new ZodValidationPipe(updateBoardSchema))
     updateBoardDto: UpdateBoardDto,
   ) {
-    return this.boardsService.update(id, updateBoardDto);
+    return this.rabbitmqClient.request(MessagePatterns.boards.update, {
+      id,
+      dto: updateBoardDto,
+    });
   }
 
   @Delete(":id")
   @UseGuards(BoardOwnerGuard)
   remove(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
-    return this.boardsService.remove(id);
+    return this.rabbitmqClient.request(MessagePatterns.boards.remove, id);
   }
 }

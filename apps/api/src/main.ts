@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import "reflect-metadata";
 import { AppModule } from "./app.module";
+import { createRabbitmqOptions } from "./infrastructure/rabbitmq/rabbitmq.options";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,11 +24,14 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.connectMicroservice(createRabbitmqOptions(configService));
+  await app.startAllMicroservices();
   await app.listen(port);
 
   const url = await app.getUrl();
   logger.log(`🚀 Server started: ${url}`);
   logger.log(`📡 API: ${url}/api`);
+  logger.log("🐇 RabbitMQ microservice transport started");
 }
 
 void bootstrap();

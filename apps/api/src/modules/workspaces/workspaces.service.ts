@@ -5,6 +5,7 @@ import {
   workspaceInclude,
   workspaceMemberInclude,
 } from "../../common/prisma/prisma-includes";
+import { RedisService } from "../../infrastructure/redis/redis.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AddWorkspaceMemberDto } from "./dto/workspace-member.dto";
 import type {
@@ -17,14 +18,21 @@ type WorkspaceWithBoardsAndTasks = Awaited<
   Prisma.WorkspaceGetPayload<{ include: typeof workspaceInclude }>
 >;
 
+type WorkspaceResponse = WorkspaceWithBoardsAndTasks & { tasksCount: number };
+
 @Injectable()
 export class WorkspacesService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
   async findAll(userId: string) {
+    const cacheKey = `workspaces:list:${userId}`;
+    const cached = await this.redis.getJson<WorkspaceResponse[]>(cacheKey);
+    if (cached) return cached;
+
     const workspaces = await this.prisma.workspace.findMany({
       where: {
         OR: [
@@ -43,16 +51,24 @@ export class WorkspacesService {
         createdAt: "desc",
       },
     });
-    return workspaces.map((workspace) => this.addTasksCount(workspace));
+    const result = workspaces.map((workspace) => this.addTasksCount(workspace));
+    await this.redis.setJson(cacheKey, result);
+    return result;
   }
 
   async findOne(userId: string, id: string) {
     await this.workspaceAccessService.assertWorkspaceAccess(userId, id);
+    const cacheKey = `workspaces:item:${userId}:${id}`;
+    const cached = await this.redis.getJson<WorkspaceResponse>(cacheKey);
+    if (cached) return cached;
+
     const workspace = await this.prisma.workspace.findUnique({
       where: { id },
       include: workspaceInclude,
     });
-    return this.addTasksCount(ensureFound(workspace, "Workspace not found"));
+    const result = this.addTasksCount(ensureFound(workspace, "Workspace not found"));
+    await this.redis.setJson(cacheKey, result);
+    return result;
   }
 
   async create(userId: string, dto: CreateWorkspaceDto) {
@@ -69,6 +85,7 @@ export class WorkspacesService {
       },
       include: workspaceInclude,
     });
+    await this.clearWorkspaceCache();
     return this.addTasksCount(workspace);
   }
 
@@ -79,6 +96,7 @@ export class WorkspacesService {
       data: dto,
       include: workspaceInclude,
     });
+    await this.clearWorkspaceCache();
     return this.addTasksCount(workspace);
   }
 
@@ -88,6 +106,7 @@ export class WorkspacesService {
       where: { id },
       include: workspaceInclude,
     });
+    await this.clearWorkspaceCache();
     return this.addTasksCount(workspace);
   }
 
@@ -125,7 +144,7 @@ export class WorkspacesService {
           select: { id: true },
         });
     if (!user) throw new NotFoundException("User not found");
-    return this.prisma.workspaceMember.upsert({
+    const member = await this.prisma.workspaceMember.upsert({
       where: {
         workspaceId_userId: {
           workspaceId,
@@ -140,9 +159,11 @@ export class WorkspacesService {
       },
       include: workspaceMemberInclude,
     });
+    await this.clearWorkspaceCache();
+    return member;
   }
 
-  private addTasksCount(workspace: WorkspaceWithBoardsAndTasks) {
+  private addTasksCount(workspace: WorkspaceWithBoardsAndTasks): WorkspaceResponse {
     return {
       ...workspace,
       tasksCount: workspace.boards.reduce(
@@ -150,5 +171,13 @@ export class WorkspacesService {
         0,
       ),
     };
+  }
+
+  private clearWorkspaceCache() {
+    return Promise.all([
+      this.redis.deleteByPattern("workspaces:*"),
+      this.redis.deleteByPattern("boards:*"),
+      this.redis.deleteByPattern("tasks:*"),
+    ]);
   }
 }

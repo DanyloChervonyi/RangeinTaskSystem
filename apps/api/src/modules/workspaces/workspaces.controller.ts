@@ -12,6 +12,8 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { idSchema } from "../../common/schemas/id.schema";
+import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 import type { JwtUser } from "../auth/types/jwt.types";
 import {
   addWorkspaceMemberSchema,
@@ -23,16 +25,17 @@ import {
   type UpdateWorkspaceDto,
   updateWorkspaceSchema,
 } from "./dto/workspace.dto";
-import { WorkspacesService } from "./workspaces.service";
 
 @Controller(["workspaces", "workspace"])
 @UseGuards(JwtAuthGuard)
 export class WorkspacesController {
-  constructor(private readonly workspacesService: WorkspacesService) {}
+  constructor(private readonly rabbitmqClient: RabbitmqClientService) {}
 
   @Get()
   findAll(@CurrentUser() user: JwtUser) {
-    return this.workspacesService.findAll(user.id);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.findAll, {
+      userId: user.id,
+    });
   }
 
   @Get(":id")
@@ -40,7 +43,10 @@ export class WorkspacesController {
     @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
   ) {
-    return this.workspacesService.findOne(user.id, id);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.findOne, {
+      userId: user.id,
+      id,
+    });
   }
 
   @Post()
@@ -49,7 +55,10 @@ export class WorkspacesController {
     @Body(new ZodValidationPipe(createWorkspaceSchema))
     createWorkspaceDto: CreateWorkspaceDto,
   ) {
-    return this.workspacesService.create(user.id, createWorkspaceDto);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.create, {
+      userId: user.id,
+      dto: createWorkspaceDto,
+    });
   }
 
   @Patch(":id")
@@ -59,7 +68,11 @@ export class WorkspacesController {
     @Body(new ZodValidationPipe(updateWorkspaceSchema))
     updateWorkspaceDto: UpdateWorkspaceDto,
   ) {
-    return this.workspacesService.update(user.id, id, updateWorkspaceDto);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.update, {
+      userId: user.id,
+      id,
+      dto: updateWorkspaceDto,
+    });
   }
 
   @Delete(":id")
@@ -67,7 +80,10 @@ export class WorkspacesController {
     @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
   ) {
-    return this.workspacesService.remove(user.id, id);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.remove, {
+      userId: user.id,
+      id,
+    });
   }
 
   @Get(":id/members")
@@ -75,7 +91,10 @@ export class WorkspacesController {
     @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
   ) {
-    return this.workspacesService.findMembers(user.id, id);
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.findMembers, {
+      userId: user.id,
+      id,
+    });
   }
 
   @Post(":id/members")
@@ -85,10 +104,10 @@ export class WorkspacesController {
     @Body(new ZodValidationPipe(addWorkspaceMemberSchema))
     addWorkspaceMemberDto: AddWorkspaceMemberDto,
   ) {
-    return this.workspacesService.addMember(
-      user.id,
-      id,
-      addWorkspaceMemberDto,
-    );
+    return this.rabbitmqClient.request(MessagePatterns.workspaces.addMember, {
+      userId: user.id,
+      workspaceId: id,
+      dto: addWorkspaceMemberDto,
+    });
   }
 }

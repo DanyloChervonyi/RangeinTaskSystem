@@ -13,6 +13,8 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { idSchema, optionalIdSchema } from "../../common/schemas/id.schema";
+import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 import type { JwtUser } from "../auth/types/jwt.types";
 import {
   type CreateTaskDto,
@@ -20,19 +22,21 @@ import {
   type UpdateTaskDto,
   updateTaskSchema,
 } from "./dto/task.dto";
-import { TasksService } from "./tasks.service";
 
 @Controller("tasks")
 @UseGuards(JwtAuthGuard)
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(private readonly rabbitmqClient: RabbitmqClientService) {}
 
   @Get()
   findAll(
     @CurrentUser() user: JwtUser,
     @Query("boardId", new ZodValidationPipe(optionalIdSchema)) boardId?: string,
   ) {
-    return this.tasksService.findAll(user.id, boardId);
+    return this.rabbitmqClient.request(MessagePatterns.tasks.findAll, {
+      userId: user.id,
+      boardId,
+    });
   }
 
   @Get(":id")
@@ -40,7 +44,10 @@ export class TasksController {
     @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
   ) {
-    return this.tasksService.findOne(user.id, id);
+    return this.rabbitmqClient.request(MessagePatterns.tasks.findOne, {
+      userId: user.id,
+      id,
+    });
   }
 
   @Post()
@@ -48,7 +55,10 @@ export class TasksController {
     @CurrentUser() user: JwtUser,
     @Body(new ZodValidationPipe(createTaskSchema)) createTaskDto: CreateTaskDto,
   ) {
-    return this.tasksService.create(user.id, createTaskDto);
+    return this.rabbitmqClient.request(MessagePatterns.tasks.create, {
+      userId: user.id,
+      dto: createTaskDto,
+    });
   }
 
   @Patch(":id")
@@ -57,7 +67,11 @@ export class TasksController {
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
     @Body(new ZodValidationPipe(updateTaskSchema)) updateTaskDto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(user.id, id, updateTaskDto);
+    return this.rabbitmqClient.request(MessagePatterns.tasks.update, {
+      userId: user.id,
+      id,
+      dto: updateTaskDto,
+    });
   }
 
   @Delete(":id")
@@ -65,6 +79,9 @@ export class TasksController {
     @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
   ) {
-    return this.tasksService.remove(user.id, id);
+    return this.rabbitmqClient.request(MessagePatterns.tasks.remove, {
+      userId: user.id,
+      id,
+    });
   }
 }
