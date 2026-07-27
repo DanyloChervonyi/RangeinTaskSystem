@@ -13,7 +13,8 @@ export class RabbitmqClientService {
   private readonly requestTimeoutMs: number;
 
   constructor(
-    private readonly client: ClientProxy,
+    private readonly authClient: ClientProxy,
+    private readonly workspaceClient: ClientProxy,
     configService: ConfigService,
   ) {
     this.requestTimeoutMs =
@@ -21,8 +22,10 @@ export class RabbitmqClientService {
   }
 
   request<Response>(pattern: string, payload: unknown): Promise<Response> {
+    const client = this.resolveClient(pattern);
+
     return lastValueFrom(
-      this.client.send<Response>(pattern, payload).pipe(
+      client.send<Response>(pattern, payload).pipe(
         timeout(this.requestTimeoutMs),
         catchError((error: unknown) => {
           if (error instanceof TimeoutError)
@@ -34,6 +37,14 @@ export class RabbitmqClientService {
         }),
       ),
     );
+  }
+
+  private resolveClient(pattern: string) {
+    if (pattern.startsWith("auth.") || pattern.startsWith("users.")) {
+      return this.authClient;
+    }
+
+    return this.workspaceClient;
   }
 
   private isRpcHttpError(

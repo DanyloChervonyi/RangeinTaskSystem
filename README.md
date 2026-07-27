@@ -1,12 +1,12 @@
 # Rangein Task System
 
-A task management tutorial project in pnpm monorepo format. The project includes a React client and a NestJS API with PostgreSQL, Prisma, JWT authentication, Zod validation, RabbitMQ message transport, and Redis caching.
+A task management project in pnpm monorepo format. The project includes a React client, a NestJS API Gateway, dedicated NestJS RabbitMQ microservices, PostgreSQL, Prisma, JWT authentication, Zod validation, and Redis caching.
 
 ## Implemented
 
 - Authorization: `POST /api/auth/register`, `POST /api/auth/login`.
 - Secure CRUD for workspaces, boards, and tasks.
-- RabbitMQ-based backend command flow: REST controllers act as an API gateway and send commands to NestJS microservice message handlers.
+- RabbitMQ-based backend command flow: REST controllers act as an API Gateway and send commands to dedicated NestJS microservices.
 - Redis caching for workspace, board, and task read models with cache invalidation after mutations.
 - Backend access check: the user only sees their own workspaces or those in which they are added as a member.
 - Prisma models: `User`, `Workspace`, `WorkspaceMember`, `Board`, `Task`.
@@ -16,7 +16,7 @@ A task management tutorial project in pnpm monorepo format. The project includes
 ## Tech Stack
 
 - Frontend: React, TypeScript, Vite, Zustand, React Query, Axios.
-- Backend: NestJS, NestJS Microservices, Prisma, PostgreSQL, RabbitMQ, Redis, Passport JWT, Zod.
+- Backend: NestJS API Gateway, NestJS Microservices, Prisma, PostgreSQL, RabbitMQ, Redis, Passport JWT, Zod.
 - Infrastructure: pnpm workspaces, Docker Compose for PostgreSQL, Redis, and RabbitMQ.
 
 ## Structure
@@ -24,29 +24,44 @@ A task management tutorial project in pnpm monorepo format. The project includes
 ```text
 apps/api/src
   common/
-    decorators/
     guards/
-    pipes/
-    prisma/
-    schemas/
   infrastructure/
     rabbitmq/
-    redis/
   modules/
     auth/
-      dto/
-      types/
     users/
-      types/
     workspaces/
-      dto/
     boards/
-      dto/
     tasks/
-      dto/
+
+apps/auth-service/src
+  common/
+    prisma/
+  modules/
+    auth/
+    users/
   prisma/
 
-apps/client/src
+apps/workspace-service/src
+  common/
+    prisma/
+  infrastructure/
+    redis/
+  modules/
+    workspaces/
+    boards/
+    tasks/
+  prisma/
+
+apps/libs/common/src
+  decorators/
+  dto/
+  pipes/
+  rabbitmq/
+  schemas/
+  types/
+
+client/src
   api/
   app/
   components/
@@ -57,10 +72,16 @@ apps/client/src
   validation/
 ```
 
-The backend is split into domain modules. `common/` stores shared guards, decorators,
-pipes, and Prisma helpers. `infrastructure/` stores RabbitMQ and Redis integration.
-`prisma/` stores the Prisma connection to NestJS. DTOs are located within their modules
-because the workspace, board, and task creation schemas relate to a specific business domain.
+The backend is split into three running processes:
+
+- `apps/api` is the public HTTP API Gateway. It validates input, verifies JWTs, and sends RabbitMQ commands.
+- `apps/auth-service` owns auth and users business logic.
+- `apps/workspace-service` owns workspaces, boards, tasks, Prisma access checks, and Redis read caching.
+- `apps/libs/common` stores shared DTOs, schemas, decorators, RabbitMQ constants/options, and shared types.
+
+The monorepo uses one root `node_modules` managed by pnpm. Individual apps and libs keep
+their own `package.json` only to declare dependencies and scripts; they should not have
+separate installed dependency trees.
 
 ## Backend Architecture
 
@@ -69,29 +90,37 @@ The public HTTP API is intentionally unchanged for the frontend:
 ```text
 React client
   -> REST endpoint /api/...
-  -> NestJS HTTP controller
-  -> RabbitMQ ClientProxy command
-  -> @MessagePattern handler
+  -> apps/api HTTP controller
+  -> RabbitMQ command
+  -> apps/auth-service or apps/workspace-service @MessagePattern handler
   -> domain service
+  -> Redis cache when applicable
   -> Prisma/PostgreSQL
 ```
 
-The REST controllers now work as a lightweight API gateway. They validate HTTP input,
-run guards, read the current JWT user, and send a RabbitMQ message using
+The REST controllers work as a lightweight API Gateway. They validate HTTP input,
+run HTTP/JWT guards, read the current JWT user, and send a RabbitMQ message using
 `RabbitmqClientService`.
+
+RabbitMQ queues are separated by service:
+
+```text
+rangein.auth       -> apps/auth-service
+rangein.workspace  -> apps/workspace-service
+```
 
 Message handlers are located next to their domain modules:
 
 ```text
-auth/auth.messages.ts
-users/users.messages.ts
-workspaces/workspaces.messages.ts
-boards/boards.messages.ts
-tasks/tasks.messages.ts
+apps/auth-service/src/modules/auth/auth.messages.ts
+apps/auth-service/src/modules/users/users.messages.ts
+apps/workspace-service/src/modules/workspaces/workspaces.messages.ts
+apps/workspace-service/src/modules/boards/boards.messages.ts
+apps/workspace-service/src/modules/tasks/tasks.messages.ts
 ```
 
-RabbitMQ message names are centralized in
-`apps/api/src/infrastructure/rabbitmq/rabbitmq.constants.ts`.
+RabbitMQ message names and queue options are centralized in
+`apps/libs/common/src/rabbitmq` so producers and consumers use the same command names.
 
 Redis is used as a read cache for frequently requested entities:
 
@@ -110,7 +139,7 @@ Install dependencies:
 pnpm install
 ```
 
-Create `apps/api/.env`:
+Create root `.env` from `.env.example`:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rangein_task_system?schema=public"
@@ -119,14 +148,18 @@ JWT_EXPIRES_IN="7d"
 PORT=3000
 CORS_ORIGIN="http://localhost:5173"
 RABBITMQ_URL="amqp://rabbit:rabbit@localhost:5672"
-RABBITMQ_QUEUE="rangein.task-system"
+RABBITMQ_AUTH_QUEUE="rangein.auth"
+RABBITMQ_WORKSPACE_QUEUE="rangein.workspace"
 RABBITMQ_REQUEST_TIMEOUT_MS=5000
 REDIS_HOST="localhost"
 REDIS_PORT=6379
 REDIS_DB=0
 ```
 
-Optionally create `apps/client/.env` if the API is running on a non-default path URL:
+For backward compatibility, backend services can still read `apps/api/.env`, but the
+preferred setup is a single root `.env`.
+
+Optionally create `client/.env` if the API is running on a non-default path URL:
 
 ```env
 VITE_API_URL="http://localhost:3000/api"
@@ -157,26 +190,33 @@ pnpm --dir apps/api db:push
 pnpm --dir apps/api db:seed
 ```
 
-Start the API and client:
+Start the backend services and client:
 
 ```bash
-pnpm api:dev
+pnpm backend:dev
 pnpm client:dev
 ```
 
+Or run backend processes separately:
+
+```bash
+pnpm api:dev
+pnpm auth:dev
+pnpm workspace:dev
+```
+
 The client will be on `http://localhost:5173`, the API on `http://localhost:3000/api`.
-The API requires RabbitMQ to be running because the HTTP controllers call the backend
-message handlers through RabbitMQ.
+The API Gateway requires RabbitMQ plus both backend microservices to be running.
 
 ## Frontend Data Flow
 
 Previously, `useWorkspaceStore` stored `workspacesMock`. The mocks have now been removed:
 
-- `apps/client/src/api/apiClient.ts` creates a generic Axios client;
-- `apps/client/src/api/workspacesApi.ts` contains HTTP functions;
-- `apps/client/src/features/workspaces/useWorkspacesQuery.ts` contains React
+- `client/src/api/apiClient.ts` creates a generic Axios client;
+- `client/src/api/workspacesApi.ts` contains HTTP functions;
+- `client/src/features/workspaces/useWorkspacesQuery.ts` contains React
   Query hooks for loading and mutations;
-- `apps/client/src/store/useWorkspaceStore.ts` only stores
+- `client/src/store/useWorkspaceStore.ts` only stores
   `selectedWorkspaceId`.
 - Workspace task totals come from the API as `tasksCount`; the client only
   displays the value and does not recalculate it from nested boards.
@@ -258,15 +298,14 @@ DELETE /api/tasks/:id
 
 ## Additionally
 
-1. The backend is divided into modules: auth is responsible for JWTs, users for users,
-   workspaces for workspaces and members, and boards/tasks for board entities.
-2. Controllers receive HTTP requests, DTOs/Zods validate input data, and guards check access.
-   Then controllers send RabbitMQ commands to module message handlers.
-3. `JwtAuthGuard` protects private endpoints, and `WorkspaceAccessService`
-   checks permissions at the workspace level. Board endpoints attach dedicated
-   guards so access checks stay outside `BoardsService`.
-4. Message handlers call domain services. Services execute business logic, use Redis for
-   read caching where useful, and access PostgreSQL through Prisma.
+1. The backend is divided into an API Gateway and two RabbitMQ microservices.
+2. Gateway controllers receive HTTP requests, DTOs/Zods validate input data, and
+   `JwtAuthGuard` protects private endpoints.
+3. The gateway sends commands to RabbitMQ. Auth/users commands go to `rangein.auth`;
+   workspace/board/task commands go to `rangein.workspace`.
+4. Microservice handlers call domain services. Services execute business logic,
+   check workspace/board/task access, use Redis for read caching where useful,
+   and access PostgreSQL through Prisma.
 5. The frontend no longer creates ids via `createId` and doesn't read `workspacesMock`.
    Data comes from the backend, and after mutations, React Query invalidates the
    `workspaces` query and reloads the current state.
@@ -277,8 +316,8 @@ DELETE /api/tasks/:id
 
 ```bash
 pnpm client:build
-pnpm api:build
-pnpm lint
+pnpm backend:build
+pnpm backend:lint
 ```
 
 Limitation of the current version: Left/Right buttons only change the column order in

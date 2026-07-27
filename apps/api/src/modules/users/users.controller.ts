@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { idSchema } from "../../common/schemas/id.schema";
-import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { ZodValidationPipe } from "@rangein-task-system/common";
+import { idSchema } from "@rangein-task-system/common";
+import { MessagePatterns } from "@rangein-task-system/common";
 import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 
 @Controller("users")

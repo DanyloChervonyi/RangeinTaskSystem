@@ -26,6 +26,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.28",
     "@prisma/client": "6.16.3",
+    "@rangein-task-system/common": "workspace:*",
     "@types/passport-jwt": "^4.0.1",
     "amqplib": "^2.0.1",
     "bcryptjs": "^3.0.3",

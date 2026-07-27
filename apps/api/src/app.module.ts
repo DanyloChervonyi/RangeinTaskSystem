@@ -7,14 +7,13 @@ import { BoardsModule } from "./modules/boards/boards.module";
 import { TasksModule } from "./modules/tasks/tasks.module";
 import { UsersModule } from "./modules/users/users.module";
 import { WorkspacesModule } from "./modules/workspaces/workspaces.module";
-import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: ["../../.env", ".env"],
       isGlobal: true
     }),
-    PrismaModule,
     AuthModule,
     UsersModule,
     WorkspacesModule,

@@ -1,13 +1,13 @@
 import { Body, Controller, Post } from "@nestjs/common";
-import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { MessagePatterns } from "@rangein-task-system/common";
 import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
+import { ZodValidationPipe } from "@rangein-task-system/common";
 import {
   type LoginDto,
   loginSchema,
   type RegisterDto,
   registerSchema,
-} from "./dto/auth.dto";
+} from "@rangein-task-system/common";
 
 @Controller("auth")
 export class AuthController {

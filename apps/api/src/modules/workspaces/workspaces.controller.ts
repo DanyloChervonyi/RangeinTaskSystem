@@ -8,23 +8,23 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { CurrentUser } from "@rangein-task-system/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { idSchema } from "../../common/schemas/id.schema";
-import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { ZodValidationPipe } from "@rangein-task-system/common";
+import { idSchema } from "@rangein-task-system/common";
+import { MessagePatterns } from "@rangein-task-system/common";
 import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
-import type { JwtUser } from "../auth/types/jwt.types";
+import type { JwtUser } from "@rangein-task-system/common";
 import {
   addWorkspaceMemberSchema,
   type AddWorkspaceMemberDto,
-} from "./dto/workspace-member.dto";
+} from "@rangein-task-system/common";
 import {
   type CreateWorkspaceDto,
   createWorkspaceSchema,
   type UpdateWorkspaceDto,
   updateWorkspaceSchema,
-} from "./dto/workspace.dto";
+} from "@rangein-task-system/common";
 
 @Controller(["workspaces", "workspace"])
 @UseGuards(JwtAuthGuard)

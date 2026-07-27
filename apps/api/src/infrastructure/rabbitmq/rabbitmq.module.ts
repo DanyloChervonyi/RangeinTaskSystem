@@ -1,9 +1,12 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ClientProxy, ClientsModule } from "@nestjs/microservices";
-import { RABBITMQ_CLIENT } from "./rabbitmq.constants";
+import {
+  AUTH_RABBITMQ_CLIENT,
+  createRabbitmqOptions,
+  WORKSPACE_RABBITMQ_CLIENT,
+} from "@rangein-task-system/common";
 import { RabbitmqClientService } from "./rabbitmq-client.service";
-import { createRabbitmqOptions } from "./rabbitmq.options";
 
 @Module({
   imports: [
@@ -11,17 +14,29 @@ import { createRabbitmqOptions } from "./rabbitmq.options";
       {
         imports: [ConfigModule],
         inject: [ConfigService],
-        name: RABBITMQ_CLIENT,
-        useFactory: createRabbitmqOptions,
+        name: AUTH_RABBITMQ_CLIENT,
+        useFactory: (configService: ConfigService) =>
+          createRabbitmqOptions(configService, "auth"),
+      },
+      {
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        name: WORKSPACE_RABBITMQ_CLIENT,
+        useFactory: (configService: ConfigService) =>
+          createRabbitmqOptions(configService, "workspace"),
       },
     ]),
   ],
   providers: [
     {
-      inject: [RABBITMQ_CLIENT, ConfigService],
+      inject: [AUTH_RABBITMQ_CLIENT, WORKSPACE_RABBITMQ_CLIENT, ConfigService],
       provide: RabbitmqClientService,
-      useFactory: (client: ClientProxy, configService: ConfigService) =>
-        new RabbitmqClientService(client, configService),
+      useFactory: (
+        authClient: ClientProxy,
+        workspaceClient: ClientProxy,
+        configService: ConfigService,
+      ) =>
+        new RabbitmqClientService(authClient, workspaceClient, configService),
     },
   ],
   exports: [RabbitmqClientService],

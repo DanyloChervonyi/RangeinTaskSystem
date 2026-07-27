@@ -9,25 +9,19 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { CurrentUser } from "@rangein-task-system/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { idSchema, optionalIdSchema } from "../../common/schemas/id.schema";
-import type { JwtUser } from "../auth/types/jwt.types";
-import {
-  BoardCreateOwnerGuard,
-  BoardListAccessGuard,
-  BoardOwnerGuard,
-  BoardReadAccessGuard,
-} from "../../common/guards/boards-access.guards";
-import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { ZodValidationPipe } from "@rangein-task-system/common";
+import { idSchema, optionalIdSchema } from "@rangein-task-system/common";
+import type { JwtUser } from "@rangein-task-system/common";
+import { MessagePatterns } from "@rangein-task-system/common";
 import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
 import {
   type CreateBoardDto,
   createBoardSchema,
   type UpdateBoardDto,
   updateBoardSchema,
-} from "./dto/board.dto";
+} from "@rangein-task-system/common";
 
 @Controller(["boards", "board"])
 @UseGuards(JwtAuthGuard)
@@ -35,7 +29,6 @@ export class BoardsController {
   constructor(private readonly rabbitmqClient: RabbitmqClientService) {}
 
   @Get()
-  @UseGuards(BoardListAccessGuard)
   findAll(
     @CurrentUser() user: JwtUser,
     @Query("workspaceId", new ZodValidationPipe(optionalIdSchema))
@@ -48,39 +41,50 @@ export class BoardsController {
   }
 
   @Get(":id")
-  @UseGuards(BoardReadAccessGuard)
-  findOne(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
-    return this.rabbitmqClient.request(MessagePatterns.boards.findOne, id);
+  findOne(
+    @CurrentUser() user: JwtUser,
+    @Param("id", new ZodValidationPipe(idSchema)) id: string,
+  ) {
+    return this.rabbitmqClient.request(MessagePatterns.boards.findOne, {
+      userId: user.id,
+      id,
+    });
   }
 
   @Post()
-  @UseGuards(BoardCreateOwnerGuard)
   create(
+    @CurrentUser() user: JwtUser,
     @Body(new ZodValidationPipe(createBoardSchema))
     createBoardDto: CreateBoardDto,
   ) {
-    return this.rabbitmqClient.request(
-      MessagePatterns.boards.create,
-      createBoardDto,
-    );
+    return this.rabbitmqClient.request(MessagePatterns.boards.create, {
+      userId: user.id,
+      dto: createBoardDto,
+    });
   }
 
   @Patch(":id")
-  @UseGuards(BoardOwnerGuard)
   update(
+    @CurrentUser() user: JwtUser,
     @Param("id", new ZodValidationPipe(idSchema)) id: string,
     @Body(new ZodValidationPipe(updateBoardSchema))
     updateBoardDto: UpdateBoardDto,
   ) {
     return this.rabbitmqClient.request(MessagePatterns.boards.update, {
+      userId: user.id,
       id,
       dto: updateBoardDto,
     });
   }
 
   @Delete(":id")
-  @UseGuards(BoardOwnerGuard)
-  remove(@Param("id", new ZodValidationPipe(idSchema)) id: string) {
-    return this.rabbitmqClient.request(MessagePatterns.boards.remove, id);
+  remove(
+    @CurrentUser() user: JwtUser,
+    @Param("id", new ZodValidationPipe(idSchema)) id: string,
+  ) {
+    return this.rabbitmqClient.request(MessagePatterns.boards.remove, {
+      userId: user.id,
+      id,
+    });
   }
 }

@@ -9,19 +9,19 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { CurrentUser } from "@rangein-task-system/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
-import { idSchema, optionalIdSchema } from "../../common/schemas/id.schema";
-import { MessagePatterns } from "../../infrastructure/rabbitmq/rabbitmq.constants";
+import { ZodValidationPipe } from "@rangein-task-system/common";
+import { idSchema, optionalIdSchema } from "@rangein-task-system/common";
+import { MessagePatterns } from "@rangein-task-system/common";
 import { RabbitmqClientService } from "../../infrastructure/rabbitmq/rabbitmq-client.service";
-import type { JwtUser } from "../auth/types/jwt.types";
+import type { JwtUser } from "@rangein-task-system/common";
 import {
   type CreateTaskDto,
   createTaskSchema,
   type UpdateTaskDto,
   updateTaskSchema,
-} from "./dto/task.dto";
+} from "@rangein-task-system/common";
 
 @Controller("tasks")
 @UseGuards(JwtAuthGuard)
