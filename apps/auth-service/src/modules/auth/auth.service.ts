@@ -1,29 +1,41 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ClientProxy } from "@nestjs/microservices";
+import { MessagePatterns, USERS_RABBITMQ_CLIENT } from "@rangein-task-system/common";
 import * as bcrypt from "bcryptjs";
-import { UsersService } from "../users/users.service";
 import type { PublicUser } from "@rangein-task-system/common";
+import type { UserWithPassword } from "@rangein-task-system/common";
 import type { LoginDto, RegisterDto } from "@rangein-task-system/common";
+import { lastValueFrom } from "rxjs";
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    @Inject(USERS_RABBITMQ_CLIENT)
+    private readonly usersClient: ClientProxy,
     private readonly jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const user = await this.usersService.create({
-      email: dto.email,
-      name: dto.name,
-      passwordHash,
-    });
+    const user = await lastValueFrom(
+      this.usersClient.send<PublicUser>(MessagePatterns.users.create, {
+        email: dto.email,
+        name: dto.name,
+        passwordHash,
+      }),
+    );
     return this.buildAuthResponse(user);
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await lastValueFrom(
+      this.usersClient.send<UserWithPassword | null>(
+        MessagePatterns.users.findByEmail,
+        dto.email,
+      ),
+    );
     if (!user) throw new UnauthorizedException("Invalid email or password");
     const passwordMatches = await bcrypt.compare(
       dto.password,

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@rangein-task-system/common": ["libs/common/src/index.ts"],
+      "@rangein-task-system/common/*": ["libs/common/src/*"]
+    }
+  }
+}

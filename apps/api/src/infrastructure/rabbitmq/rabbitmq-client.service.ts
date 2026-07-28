@@ -14,6 +14,7 @@ export class RabbitmqClientService {
 
   constructor(
     private readonly authClient: ClientProxy,
+    private readonly usersClient: ClientProxy,
     private readonly workspaceClient: ClientProxy,
     configService: ConfigService,
   ) {
@@ -40,10 +41,8 @@ export class RabbitmqClientService {
   }
 
   private resolveClient(pattern: string) {
-    if (pattern.startsWith("auth.") || pattern.startsWith("users.")) {
-      return this.authClient;
-    }
-
+    if (pattern.startsWith("auth.")) return this.authClient;
+    if (pattern.startsWith("users.")) return this.usersClient;
     return this.workspaceClient;
   }
 

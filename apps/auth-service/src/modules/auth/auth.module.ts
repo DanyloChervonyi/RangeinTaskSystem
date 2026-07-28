@@ -2,13 +2,25 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import type { JwtSignOptions } from "@nestjs/jwt";
-import { UsersModule } from "../users/users.module";
+import { ClientsModule } from "@nestjs/microservices";
+import {
+  createRabbitmqOptions,
+  USERS_RABBITMQ_CLIENT,
+} from "@rangein-task-system/common";
 import { AuthMessages } from "./auth.messages";
 import { AuthService } from "./auth.service";
 
 @Module({
   imports: [
-    UsersModule,
+    ClientsModule.registerAsync([
+      {
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        name: USERS_RABBITMQ_CLIENT,
+        useFactory: (configService: ConfigService) =>
+          createRabbitmqOptions(configService, "users"),
+      },
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

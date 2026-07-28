@@ -35,10 +35,13 @@ apps/api/src
     tasks/
 
 apps/auth-service/src
+  modules/
+    auth/
+
+apps/users-service/src
   common/
     prisma/
   modules/
-    auth/
     users/
   prisma/
 
@@ -53,15 +56,13 @@ apps/workspace-service/src
     tasks/
   prisma/
 
-apps/libs/common/src
-  decorators/
-  dto/
-  pipes/
-  rabbitmq/
-  schemas/
-  types/
+apps/files-service/
+  README.md
 
-client/src
+apps/notifications-service/
+  README.md
+
+clients/web/src
   api/
   app/
   components/
@@ -70,18 +71,28 @@ client/src
   store/
   types/
   validation/
+
+libs/common/src
+  decorators/
+  dto/
+  pipes/
+  rabbitmq/
+  schemas/
+  types/
 ```
 
-The backend is split into three running processes:
+The backend is split into four running processes:
 
 - `apps/api` is the public HTTP API Gateway. It validates input, verifies JWTs, and sends RabbitMQ commands.
-- `apps/auth-service` owns auth and users business logic.
+- `apps/auth-service` owns login/register orchestration and JWT creation.
+- `apps/users-service` owns user persistence and user lookup logic.
 - `apps/workspace-service` owns workspaces, boards, tasks, Prisma access checks, and Redis read caching.
-- `apps/libs/common` stores shared DTOs, schemas, decorators, RabbitMQ constants/options, and shared types.
+- `libs/common` stores shared DTOs, schemas, decorators, RabbitMQ constants/options, and shared types.
+- `apps/files-service` and `apps/notifications-service` are reserved service boundaries for future features.
 
-The monorepo uses one root `node_modules` managed by pnpm. Individual apps and libs keep
-their own `package.json` only to declare dependencies and scripts; they should not have
-separate installed dependency trees.
+The monorepo uses pnpm workspaces. Every runnable app has its own `package.json`,
+`tsconfig`, lint config, and local `node_modules` layout, but dependencies are still
+installed through the root workspace and pnpm store.
 
 ## Backend Architecture
 
@@ -92,7 +103,7 @@ React client
   -> REST endpoint /api/...
   -> apps/api HTTP controller
   -> RabbitMQ command
-  -> apps/auth-service or apps/workspace-service @MessagePattern handler
+  -> apps/auth-service, apps/users-service, or apps/workspace-service @MessagePattern handler
   -> domain service
   -> Redis cache when applicable
   -> Prisma/PostgreSQL
@@ -106,6 +117,7 @@ RabbitMQ queues are separated by service:
 
 ```text
 rangein.auth       -> apps/auth-service
+rangein.users      -> apps/users-service
 rangein.workspace  -> apps/workspace-service
 ```
 
@@ -113,14 +125,18 @@ Message handlers are located next to their domain modules:
 
 ```text
 apps/auth-service/src/modules/auth/auth.messages.ts
-apps/auth-service/src/modules/users/users.messages.ts
+apps/users-service/src/modules/users/users.messages.ts
 apps/workspace-service/src/modules/workspaces/workspaces.messages.ts
 apps/workspace-service/src/modules/boards/boards.messages.ts
 apps/workspace-service/src/modules/tasks/tasks.messages.ts
 ```
 
+`auth-service` also uses RabbitMQ internally: registration and login call
+`users-service` through the `rangein.users` queue instead of importing user logic
+directly.
+
 RabbitMQ message names and queue options are centralized in
-`apps/libs/common/src/rabbitmq` so producers and consumers use the same command names.
+`libs/common/src/rabbitmq` so producers and consumers use the same command names.
 
 Redis is used as a read cache for frequently requested entities:
 
@@ -149,6 +165,7 @@ PORT=3000
 CORS_ORIGIN="http://localhost:5173"
 RABBITMQ_URL="amqp://rabbit:rabbit@localhost:5672"
 RABBITMQ_AUTH_QUEUE="rangein.auth"
+RABBITMQ_USERS_QUEUE="rangein.users"
 RABBITMQ_WORKSPACE_QUEUE="rangein.workspace"
 RABBITMQ_REQUEST_TIMEOUT_MS=5000
 REDIS_HOST="localhost"
@@ -159,7 +176,7 @@ REDIS_DB=0
 For backward compatibility, backend services can still read `apps/api/.env`, but the
 preferred setup is a single root `.env`.
 
-Optionally create `client/.env` if the API is running on a non-default path URL:
+Optionally create `clients/web/.env` if the API is running on a non-default path URL:
 
 ```env
 VITE_API_URL="http://localhost:3000/api"
@@ -202,21 +219,22 @@ Or run backend processes separately:
 ```bash
 pnpm api:dev
 pnpm auth:dev
+pnpm users:dev
 pnpm workspace:dev
 ```
 
 The client will be on `http://localhost:5173`, the API on `http://localhost:3000/api`.
-The API Gateway requires RabbitMQ plus both backend microservices to be running.
+The API Gateway requires RabbitMQ plus auth, users, and workspace microservices to be running.
 
 ## Frontend Data Flow
 
 Previously, `useWorkspaceStore` stored `workspacesMock`. The mocks have now been removed:
 
-- `client/src/api/apiClient.ts` creates a generic Axios client;
-- `client/src/api/workspacesApi.ts` contains HTTP functions;
-- `client/src/features/workspaces/useWorkspacesQuery.ts` contains React
+- `clients/web/src/api/apiClient.ts` creates a generic Axios client;
+- `clients/web/src/api/workspacesApi.ts` contains HTTP functions;
+- `clients/web/src/features/workspaces/useWorkspacesQuery.ts` contains React
   Query hooks for loading and mutations;
-- `client/src/store/useWorkspaceStore.ts` only stores
+- `clients/web/src/store/useWorkspaceStore.ts` only stores
   `selectedWorkspaceId`.
 - Workspace task totals come from the API as `tasksCount`; the client only
   displays the value and does not recalculate it from nested boards.
@@ -298,11 +316,12 @@ DELETE /api/tasks/:id
 
 ## Additionally
 
-1. The backend is divided into an API Gateway and two RabbitMQ microservices.
+1. The backend is divided into an API Gateway and RabbitMQ microservices.
 2. Gateway controllers receive HTTP requests, DTOs/Zods validate input data, and
    `JwtAuthGuard` protects private endpoints.
-3. The gateway sends commands to RabbitMQ. Auth/users commands go to `rangein.auth`;
-   workspace/board/task commands go to `rangein.workspace`.
+3. The gateway sends commands to RabbitMQ. Auth commands go to `rangein.auth`;
+   user commands go to `rangein.users`; workspace/board/task commands go to
+   `rangein.workspace`.
 4. Microservice handlers call domain services. Services execute business logic,
    check workspace/board/task access, use Redis for read caching where useful,
    and access PostgreSQL through Prisma.
