@@ -5,6 +5,8 @@ export * from "./dto/task.dto";
 export * from "./dto/workspace-member.dto";
 export * from "./dto/workspace.dto";
 export * from "./pipes/zod-validation.pipe";
+export * from "./prisma/ensure-found";
+export * from "./prisma/prisma-includes";
 export * from "./rabbitmq/rabbitmq-http-exception.filter";
 export * from "./rabbitmq/rabbitmq.constants";
 export * from "./rabbitmq/rabbitmq.options";

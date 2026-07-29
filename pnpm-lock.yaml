@@ -345,6 +345,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
+      '@rangein-task-system/common':
+        specifier: workspace:*
+        version: link:../../libs/common
       '@tanstack/react-query':
         specifier: ^5.101.2
         version: 5.101.2(react@19.2.7)
@@ -430,6 +433,9 @@ importers:
       '@nestjs/microservices':
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(amqplib@2.0.1)(ioredis@5.11.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@prisma/client':
+        specifier: 6.16.3
+        version: 6.16.3(prisma@6.16.3(typescript@6.0.3))(typescript@6.0.3)
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2

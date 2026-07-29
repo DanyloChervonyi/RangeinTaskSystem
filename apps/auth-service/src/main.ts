@@ -16,7 +16,6 @@ async function bootstrap() {
     createRabbitmqOptions(new ConfigService(), "auth"),
   );
   await app.listen();
-
   new Logger("AuthService").log("Auth service is listening on RabbitMQ");
 }
 

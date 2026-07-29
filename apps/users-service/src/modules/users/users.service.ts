@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from "@nestjs/common";
-import { safeUserSelect } from "../../common/prisma/prisma-includes";
+import { safeUserSelect } from "@rangein-task-system/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { CreateUserInput } from "@rangein-task-system/common";
 

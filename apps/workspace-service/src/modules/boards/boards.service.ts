@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
-import { ensureFound } from "../../common/prisma/ensure-found";
+import { ensureFound } from "@rangein-task-system/common";
 import {
   boardCreatedAscOrder,
   boardInclude,
-} from "../../common/prisma/prisma-includes";
+} from "@rangein-task-system/common";
 import { RedisService } from "../../infrastructure/redis/redis.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { WorkspaceAccessService } from "../workspaces/workspace-access.service";
