@@ -1,0 +1,38 @@
+{
+  "name": "@rangein-task-system/users-service",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "nest start --watch --entryFile apps/users-service/src/main",
+    "start": "nest start --entryFile apps/users-service/src/main",
+    "start:prod": "node dist/main.js",
+    "build": "nest build",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/microservices": "^11.1.28",
+    "@prisma/client": "6.16.3",
+    "@rangein-task-system/common": "workspace:*",
+    "amqplib": "^2.0.1",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@nestjs/cli": "^11.0.23",
+    "@types/node": "^24.13.2",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.6.2",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.62.1"
+  }
+}

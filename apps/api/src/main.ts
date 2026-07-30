@@ -28,6 +28,7 @@ async function bootstrap() {
   const url = await app.getUrl();
   logger.log(`🚀 Server started: ${url}`);
   logger.log(`📡 API: ${url}/api`);
+  logger.log("🐇 API Gateway connected to RabbitMQ clients");
 }
 
 void bootstrap();

@@ -1,48 +1,35 @@
 # Logs
 logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
 # Dependencies
 node_modules
-**/node_modules
 .pnpm-store
 
-# Build outputs
+# Build
 dist
-dist-ssr
-**/dist
-**/dist-ssr
 build
 coverage
+*.tsbuildinfo
 
-# Environment files
-*.local
+# Environment
 .env
 .env.*
 !.env.example
 
 # Prisma
+**/generated
 **/prisma/generated
-**/generated/prisma
 
-# Tool caches
+# Cache
 .turbo
 .nx
-.vite
 .cache
+.vite
 
-# Editor directories and files
+# IDE
+.idea
 .vscode/*
 !.vscode/extensions.json
-.idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?

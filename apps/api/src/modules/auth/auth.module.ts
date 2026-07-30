@@ -3,14 +3,13 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import type { JwtSignOptions } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { UsersModule } from "../users/users.module";
+import { RabbitmqModule } from "../../infrastructure/rabbitmq/rabbitmq.module";
 import { AuthController } from "./auth.controller";
-import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
 
 @Module({
   imports: [
-    UsersModule,
+    RabbitmqModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -26,6 +25,6 @@ import { JwtStrategy } from "./jwt.strategy";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [JwtStrategy],
 })
 export class AuthModule {}

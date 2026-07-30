@@ -1,5 +1,7 @@
 packages:
+  - "clients/*"
   - "apps/*"
+  - "libs/*"
 overrides:
   media-typer: 1.1.0
 allowBuilds:
