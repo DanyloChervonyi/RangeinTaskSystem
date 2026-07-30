@@ -18,8 +18,12 @@ export class RabbitmqClientService {
     private readonly workspaceClient: ClientProxy,
     configService: ConfigService,
   ) {
-    this.requestTimeoutMs =
-      configService.get<number>("RABBITMQ_REQUEST_TIMEOUT_MS") ?? 5000;
+    const requestTimeoutMs = Number(
+      configService.get<string>("RABBITMQ_REQUEST_TIMEOUT_MS") ?? 5000,
+    );
+    this.requestTimeoutMs = Number.isFinite(requestTimeoutMs)
+      ? requestTimeoutMs
+      : 5000;
   }
 
   request<Response>(pattern: string, payload: unknown): Promise<Response> {

@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "nest start --watch",
-    "start": "nest start",
+    "dev": "nest start --watch --entryFile apps/workspace-service/src/main",
+    "start": "nest start --entryFile apps/workspace-service/src/main",
     "start:prod": "node dist/main.js",
     "build": "nest build",
     "lint": "eslint \"src/**/*.ts\""
@@ -16,6 +16,7 @@
     "@nestjs/microservices": "^11.1.28",
     "@prisma/client": "6.16.3",
     "@rangein-task-system/common": "workspace:*",
+    "amqp-connection-manager": "^5.0.0",
     "amqplib": "^2.0.1",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",

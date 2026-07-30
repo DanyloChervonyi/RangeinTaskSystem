@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
@@ -8,6 +9,10 @@ const TOKEN_STORAGE_KEY = "rangein.accessToken";
 
 let accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
 let loginPromise: Promise<string> | undefined;
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -41,3 +46,25 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${await getDemoAccessToken()}`;
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      originalRequest.url?.startsWith("/auth")
+    ) {
+      throw error;
+    }
+
+    originalRequest._retry = true;
+    accessToken = null;
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    originalRequest.headers.Authorization = `Bearer ${await getDemoAccessToken()}`;
+    return apiClient(originalRequest);
+  },
+);
