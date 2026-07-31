@@ -1,19 +1,59 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PopupRoot } from "../components/PopupRoot";
+import { AuthView } from "../features/auth/AuthView";
 import { WorkspaceView } from "../features/workspaces";
 import {
   useWorkspaceMutations,
   useWorkspacesQuery,
 } from "../features/workspaces/useWorkspacesQuery";
+import {
+  clearStoredAuth,
+  getStoredAuth,
+  subscribeToLogout,
+} from "../api/apiClient";
 import { useWorkspaceStore } from "../store/useWorkspaceStore";
 import { usePopupStore } from "../store/usePopupStore";
+import type { AuthResponse } from "../types/auth";
 import type { Board, Workspace } from "../types/workspace";
 import { PopupType } from "../types/popup";
 
 export function App() {
+  const [auth, setAuth] = useState<AuthResponse | null>(() => getStoredAuth());
+  const queryClient = useQueryClient();
+
+  useEffect(
+    () =>
+      subscribeToLogout(() => {
+        setAuth(null);
+        queryClient.clear();
+      }),
+    [queryClient],
+  );
+
+  const handleLogout = useCallback(() => {
+    clearStoredAuth();
+    queryClient.clear();
+    setAuth(null);
+  }, [queryClient]);
+
+  if (!auth) {
+    return <AuthView onAuthenticated={setAuth} />;
+  }
+
+  return <AuthenticatedApp auth={auth} onLogout={handleLogout} />;
+}
+
+interface AuthenticatedAppProps {
+  auth: AuthResponse;
+  onLogout: () => void;
+}
+
+function AuthenticatedApp({ auth, onLogout }: AuthenticatedAppProps) {
   const { isError, isLoading, selectedWorkspace, workspaces } =
     useWorkspacesQuery();
-  const { deleteBoard, deleteWorkspace, reorderBoard } = useWorkspaceMutations();
+  const { deleteBoard, deleteWorkspace, reorderBoard } =
+    useWorkspaceMutations();
   const selectWorkspace = useWorkspaceStore((state) => state.selectWorkspace);
   const openConfirm = usePopupStore((state) => state.openConfirm);
   const openTextPopup = usePopupStore((state) => state.openTextPopup);
@@ -87,6 +127,7 @@ export function App() {
     },
     [reorderBoard],
   );
+  const accountName = auth.user.name?.trim() || auth.user.email;
 
   if (isLoading) {
     return (
@@ -113,6 +154,15 @@ export function App() {
     <main className="app-shell">
       <aside className="workspace-sidebar" aria-labelledby="workspaces-title">
         <p className="app-kicker">Rangein Task System</p>
+        <button
+          className="account-button"
+          onClick={onLogout}
+          title="Logout"
+          type="button"
+        >
+          <span>Account</span>
+          <strong>{accountName}</strong>
+        </button>
         <div className="sidebar-heading">
           <h1 id="workspaces-title">Workspaces</h1>
           <button

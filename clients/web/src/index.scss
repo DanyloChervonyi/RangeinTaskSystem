@@ -14,7 +14,12 @@ $shadow-panel: 0 18px 40px rgba(32, 37, 45, 0.08);
   color: $color-text;
   background: $color-page;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
     sans-serif;
   font-synthesis: none;
   line-height: 1.5;
@@ -155,6 +160,134 @@ h3 {
 .button-full {
   width: 100%;
   margin-top: 16px;
+}
+
+.auth {
+  &-screen {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+  }
+
+  &-panel {
+    width: min(100%, 420px);
+    padding: 28px;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background: $color-surface;
+    box-shadow: $shadow-panel;
+  }
+
+  &-header {
+    display: grid;
+    gap: 8px;
+
+    p {
+      margin: 0;
+      color: $color-text-muted;
+    }
+  }
+
+  &-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    margin-top: 22px;
+    padding: 4px;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background: $color-surface-muted;
+  }
+
+  &-tab {
+    min-height: 36px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: $color-text-muted;
+    font-weight: 700;
+
+    &[aria-selected="true"] {
+      background: $color-surface;
+      color: $color-text;
+      box-shadow: 0 1px 4px rgba(32, 37, 45, 0.1);
+    }
+  }
+
+  &-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  &-field {
+    display: grid;
+    gap: 6px;
+
+    span {
+      color: $color-text-muted;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid $color-border;
+      border-radius: $radius-md;
+      background: $color-surface;
+      color: $color-text;
+
+      &:focus {
+        border-color: $color-primary;
+        outline: 3px solid rgba(61, 114, 246, 0.16);
+      }
+
+      &::placeholder {
+        color: #9aa4b2;
+      }
+    }
+
+    small {
+      color: $color-danger;
+      font-size: 13px;
+      font-weight: 700;
+    }
+  }
+}
+
+.account-button {
+  display: grid;
+  width: 100%;
+  min-height: 56px;
+  margin: 10px 0 20px;
+  padding: 10px 12px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface-muted;
+  color: $color-text;
+  text-align: left;
+
+  &:hover {
+    border-color: #9db7ff;
+    background: #f2f6ff;
+  }
+
+  span {
+    color: $color-text-muted;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .icon-button {
