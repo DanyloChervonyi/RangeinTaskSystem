@@ -1,5 +1,6 @@
 import type { Workspace, Board, Task } from "./workspace";
 import type { TextEntitySchema } from "./forms";
+import type { AuthResponse } from "./auth";
 
 export interface WorkspaceViewProps {
   onCreateBoard: (workspace: Workspace) => void;
@@ -33,4 +34,7 @@ export interface TextEntityModalProps {
   title: string;
   onRequestClose: () => void;
   onSubmit: (value: string) => Promise<void> | void;
+}
+export interface AuthViewProps {
+  onAuthenticated: (auth: AuthResponse) => void;
 }
