@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rangein-config
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  CORS_ORIGIN: "http://localhost:5173"
+  RABBITMQ_AUTH_QUEUE: "rangein.auth"
+  RABBITMQ_USERS_QUEUE: "rangein.users"
+  RABBITMQ_WORKSPACE_QUEUE: "rangein.workspace"
+  RABBITMQ_REQUEST_TIMEOUT_MS: "5000"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
