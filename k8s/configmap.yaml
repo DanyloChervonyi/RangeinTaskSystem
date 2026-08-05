@@ -5,7 +5,11 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3000"
-  CORS_ORIGIN: "http://localhost:5173"
+  CORS_ORIGIN: "http://localhost"
+  VITE_API_URL: "http://localhost:3000/api"
+  VITE_DEMO_EMAIL: "demo@example.com"
+  VITE_DEMO_NAME: "Demo User"
+  VITE_DEMO_PASSWORD: "password123"
   RABBITMQ_AUTH_QUEUE: "rangein.auth"
   RABBITMQ_USERS_QUEUE: "rangein.users"
   RABBITMQ_WORKSPACE_QUEUE: "rangein.workspace"
