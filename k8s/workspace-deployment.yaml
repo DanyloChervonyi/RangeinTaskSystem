@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: workspace-service
-          image: rangein-task-system-workspace-service:latest
+          image: rangein-task-system-workspace-service:dev
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

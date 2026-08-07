@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: rangein-task-system-auth-service:latest
+          image: rangein-task-system-auth-service:dev
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: rangein-task-system-api:latest
+          image: rangein-task-system-api:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

@@ -1,0 +1,15 @@
+node_modules
+.pnpm-store
+dist
+build
+coverage
+*.log
+.git
+.cache
+.vite
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/dist
+**/*.tsbuildinfo

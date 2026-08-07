@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: rangein-task-system-frontend:latest
+          image: rangein-task-system-frontend:dev
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

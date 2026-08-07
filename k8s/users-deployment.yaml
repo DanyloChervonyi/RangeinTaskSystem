@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: users-service
-          image: rangein-task-system-users-service:latest
+          image: rangein-task-system-users-service:dev
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
