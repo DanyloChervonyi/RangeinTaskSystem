@@ -8,7 +8,7 @@
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
-      "@rangein-task-system/common": ["libs/common/src/index.ts"],
+      "@rangein-task-system/common": ["libs/common/src/index"],
       "@rangein-task-system/common/*": ["libs/common/src/*"]
     }
   }

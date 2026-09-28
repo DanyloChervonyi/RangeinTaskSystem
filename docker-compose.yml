@@ -6,9 +6,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rangein_task_system
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-rangein_task_system}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -40,8 +40,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: rabbit
-      RABBITMQ_DEFAULT_PASS: rabbit
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbit}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-rabbit}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
