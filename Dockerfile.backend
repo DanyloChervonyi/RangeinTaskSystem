@@ -1,0 +1,19 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY . .
+
+RUN pnpm install --frozen-lockfile
+
+ARG SERVICE
+RUN pnpm --dir apps/api prisma:generate
+RUN pnpm common:build
+RUN pnpm --dir apps/${SERVICE} build
+
+ENV SERVICE=${SERVICE}
+ENV NODE_ENV=production
+
+CMD ["sh", "-c", "node apps/${SERVICE}/dist/apps/${SERVICE}/src/main.js"]

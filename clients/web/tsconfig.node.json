@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "types": ["node"],
+    "noEmit": true,
+    "ignoreDeprecations": "6.0",
+    "moduleResolution": "nodenext"
+  },
+  "include": ["vite.config.ts"]
+}
